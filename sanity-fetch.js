@@ -89,9 +89,6 @@ function applyFilters() {
     renderGrid(filtered);
 }
 
-/**
- * Robust YouTube ID extractor for Standard, Shorts, and Mobile URLs
- */
 function getYouTubeID(url) {
     if (!url) return null;
     let videoId = "";
@@ -115,9 +112,31 @@ function renderGrid(data) {
     grid.innerHTML = '';
     if (counter) counter.innerText = data.length.toString().padStart(3, '0');
 
-    if (currentView === 'list') {
-        grid.style.gridTemplateColumns = '1fr';
-        data.forEach((p, index) => {
+    data.forEach((p, index) => {
+        const ytId = getYouTubeID(p.videoUrl);
+        let thumbUrl = "";
+        
+        // BETTER SANITY IMAGE CONVERSION
+        if (p.thumbnail?.asset?._ref) {
+            const ref = p.thumbnail.asset._ref;
+            // Matches image-ID-WIDTHxHEIGHT-EXTENSION
+            const parts = ref.split('-');
+            if (parts.length >= 4) {
+                const id = parts[1];
+                const dimensions = parts[2];
+                const extension = parts[3];
+                thumbUrl = `https://cdn.sanity.io/images/${PROJECT_ID}/${DATASET}/${id}-${dimensions}.${extension}?w=800&q=80`;
+            }
+        } 
+        
+        // If Sanity construction failed or was skipped
+        if (!thumbUrl && ytId) {
+            thumbUrl = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+        } else if (!thumbUrl) {
+            thumbUrl = "https://picsum.photos/seed/" + (p._id || index) + "/600/600";
+        }
+
+        if (currentView === 'list') {
             const div = document.createElement('div');
             div.className = "list-view-item flex items-center justify-between py-3 px-2 cursor-pointer group";
             div.onclick = () => openModal(p.videoUrl);
@@ -132,42 +151,26 @@ function renderGrid(data) {
                 </div>
             `;
             grid.appendChild(div);
-        });
-    } else {
-        const densitySelect = document.getElementById('grid-select');
-        const density = densitySelect ? densitySelect.value : 12;
-        grid.style.gridTemplateColumns = `repeat(${density}, minmax(0, 1fr))`;
-        
-        data.forEach(p => {
-            const ytId = getYouTubeID(p.videoUrl);
-            let thumbUrl = "";
+        } else {
+            const density = document.getElementById('grid-select')?.value || 12;
+            grid.style.gridTemplateColumns = `repeat(${density}, minmax(0, 1fr))`;
             
-            // If there's a Sanity image, use it. Otherwise, try YouTube.
-            if (p.thumbnail?.asset?._ref) {
-                const ref = p.thumbnail.asset._ref;
-                const fileName = ref.replace('image-', '').replace('-jpg', '.jpg').replace('-png', '.png').replace('-webp', '.webp');
-                thumbUrl = `https://cdn.sanity.io/images/${PROJECT_ID}/${DATASET}/${fileName}?w=600&fit=crop`;
-            } else if (ytId) {
-                thumbUrl = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
-            } else {
-                thumbUrl = "https://picsum.photos/seed/placeholder/400/400";
-            }
-
             const div = document.createElement('div');
             div.className = "project-card relative aspect-square cursor-pointer bg-zinc-900 overflow-hidden";
             div.onclick = () => openModal(p.videoUrl);
             
+            // Smarter onerror that iterates through YouTube resolutions
             div.innerHTML = `
                 <img src="${thumbUrl}" 
                      class="w-full h-full object-cover grayscale brightness-50 hover:grayscale-0 hover:brightness-100 transition-all duration-500"
-                     onerror="if(this.src.indexOf('sanity.io') !== -1 && '${ytId}') { this.src='https://img.youtube.com/vi/${ytId}/hqdefault.jpg'; } else { this.src='https://img.youtube.com/vi/${ytId}/0.jpg'; }">
+                     onerror="if(this.src.includes('sanity.io') && '${ytId}') { this.src='https://img.youtube.com/vi/${ytId}/hqdefault.jpg'; } else if (this.src.includes('hqdefault')) { this.src='https://img.youtube.com/vi/${ytId}/0.jpg'; }">
                 <div class="absolute inset-0 flex flex-col justify-end p-2 opacity-0 hover:opacity-100 bg-gradient-to-t from-black/80 to-transparent transition-opacity">
                     <h3 class="text-[8px] uppercase tracking-tighter">${p.title}</h3>
                 </div>
             `;
             grid.appendChild(div);
-        });
-    }
+        }
+    });
 }
 
 window.onload = initArchive;
