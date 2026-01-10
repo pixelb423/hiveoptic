@@ -3,223 +3,248 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>bilal | hiveoptic archive</title>
+    <title>bilal | archive</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #000000;
-            color: #ffffff;
-            margin: 0;
-            -webkit-font-smoothing: antialiased;
-        }
-        
+        body { font-family: 'Inter', sans-serif; background-color: #000; color: #fff; margin: 0; }
         .tracking-ultra { letter-spacing: 0.6em; }
+        .tag-btn { transition: all 0.3s ease; border-bottom: 1px solid transparent; cursor: pointer; }
+        .tag-btn.active-client { color: #fff; border-color: #fff; }
+        .tag-btn.active-cat { color: #fbbf24; border-color: #fbbf24; }
         
+        #portfolio-grid { transition: opacity 0.3s ease; }
+        
+        .project-card { transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 1; }
+        .project-card:hover { transform: scale(1.1); z-index: 50; }
+        
+        .list-view-item { border-bottom: 1px solid #111; transition: background 0.2s; }
+        .list-view-item:hover { background: #0a0a0a; }
+
         ::-webkit-scrollbar { width: 2px; }
-        ::-webkit-scrollbar-track { background: #000; }
         ::-webkit-scrollbar-thumb { background: #333; }
-
-        nav {
-            background-color: #000000;
-            border-bottom: 1px solid #111;
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        /* Custom Select Styling */
+        .custom-select {
+            appearance: none;
+            background: #111;
+            border: 1px solid #222;
+            color: #666;
+            padding: 4px 24px 4px 8px;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            border-radius: 2px;
+            outline: none;
         }
-
-        .project-card {
-            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            z-index: 1;
-        }
-
-        .project-card:hover {
-            transform: scale(1.3);
-            z-index: 50;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.9);
-        }
-
-        .project-card img {
-            transition: filter 0.5s ease;
-        }
-
-        .project-card:hover img {
-            filter: grayscale(0%) brightness(1.2);
-        }
-
-        .project-overlay {
-            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .project-card:hover .project-overlay {
-            opacity: 1;
-        }
-
-        .modal-active {
-            animation: modalFadeIn 0.4s ease forwards;
-        }
-
-        @keyframes modalFadeIn {
-            from { opacity: 0; backdrop-filter: blur(0px); }
-            to { opacity: 1; backdrop-filter: blur(25px); }
-        }
+        .custom-select:hover { border-color: #444; color: #fff; }
+        
+        .icon-btn { opacity: 0.4; transition: opacity 0.2s; cursor: pointer; }
+        .icon-btn.active { opacity: 1; color: #fff; }
     </style>
 </head>
-<body class="pt-24 md:pt-32 p-2 md:p-6">
+<body class="pt-56 p-4 md:p-8">
 
-    <nav class="fixed top-0 left-0 w-full z-[100] p-4 md:p-8 flex justify-between items-center">
-        <div>
-            <h1 class="text-base font-light lowercase tracking-ultra">bilal</h1>
-            <p class="text-[8px] uppercase tracking-widest text-zinc-600 mt-0.5">hiveoptic archive</p>
-        </div>
-        <div class="text-right flex items-center gap-8">
-            <div class="hidden sm:block">
-                <p class="text-[9px] uppercase tracking-widest text-zinc-600 mb-0.5">vault status</p>
-                <span id="status-tag" class="text-[10px] text-zinc-400 uppercase tracking-widest transition-colors duration-500">offline mode</span>
-            </div>
+    <nav class="fixed top-0 left-0 w-full z-[100] bg-black/90 backdrop-blur-xl border-b border-zinc-900 p-6 md:px-12">
+        <div class="flex justify-between items-start mb-6">
             <div>
-                <p class="text-[9px] uppercase tracking-widest text-zinc-600 mb-0.5">total entries</p>
-                <span id="project-counter" class="text-xl font-light">000</span>
+                <h1 class="text-sm font-light lowercase tracking-ultra">bilal</h1>
+                <p class="text-[8px] uppercase tracking-[0.3em] text-zinc-600">multi-threaded archive</p>
+            </div>
+
+            <!-- VIEW CONTROLS -->
+            <div class="flex items-center gap-6 bg-zinc-900/30 p-2 rounded-sm border border-zinc-800/50">
+                <!-- View Mode Icons -->
+                <div class="flex gap-4 border-r border-zinc-800 pr-4">
+                    <button onclick="setView('grid')" id="btn-grid" class="icon-btn active" title="Grid View">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    </button>
+                    <button onclick="setView('list')" id="btn-list" class="icon-btn" title="List View">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                    </button>
+                </div>
+                
+                <!-- Density Dropdown -->
+                <div id="density-control" class="flex items-center gap-3">
+                    <span class="text-[8px] uppercase text-zinc-600 tracking-tighter">Cols</span>
+                    <div class="relative">
+                        <select id="grid-select" onchange="updateGridDensity(this.value)" class="custom-select">
+                            <option value="3">3</option>
+                            <option value="5">5</option>
+                            <option value="8">8</option>
+                            <option value="12" selected>12</option>
+                            <option value="24">24</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="text-right border-l border-zinc-800 pl-6">
+                    <span id="project-counter" class="text-xl font-light">000</span>
+                    <p id="status-tag" class="text-[8px] uppercase tracking-widest text-green-500">sync</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- FILTER INTERFACE -->
+        <div class="space-y-4">
+            <div class="flex gap-4 text-[9px] uppercase tracking-widest text-zinc-500 items-center overflow-x-auto no-scrollbar">
+                <span class="text-zinc-800 pr-2">Client //</span>
+                <button onclick="setFilter('client', 'all')" class="tag-btn client-link active-client">All</button>
+                <button onclick="setFilter('client', 'hk')" class="tag-btn client-link">HK</button>
+                <button onclick="setFilter('client', 'nike')" class="tag-btn client-link">Nike</button>
+                <button onclick="setFilter('client', 'adidas')" class="tag-btn client-link">Adidas</button>
+                <button onclick="setFilter('client', 'personal')" class="tag-btn client-link">Personal</button>
+            </div>
+
+            <div class="flex gap-4 text-[9px] uppercase tracking-widest text-zinc-600 items-center overflow-x-auto no-scrollbar">
+                <span class="text-zinc-800 pr-2">Genre //</span>
+                <button onclick="setFilter('cat', 'all')" class="tag-btn cat-link active-cat">All</button>
+                <button onclick="setFilter('cat', 'chocolate')" class="tag-btn cat-link hover:text-amber-500">Chocolate</button>
+                <button onclick="setFilter('cat', 'beverage')" class="tag-btn cat-link hover:text-amber-500">Beverage</button>
+                <button onclick="setFilter('cat', 'fashion')" class="tag-btn cat-link hover:text-amber-500">Fashion</button>
+                <button onclick="setFilter('cat', 'shorts')" class="tag-btn cat-link hover:text-amber-500">Shorts</button>
+                <button onclick="setFilter('cat', 'commercial')" class="tag-btn cat-link hover:text-amber-500">Commercial</button>
             </div>
         </div>
     </nav>
 
-    <main class="w-full mx-auto px-1">
-        <div id="portfolio-grid" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-1">
-            <!-- Content injected via JS -->
-        </div>
+    <main id="portfolio-grid" class="grid gap-1">
+        <!-- Projects injected here -->
     </main>
 
-    <footer class="mt-32 mb-12 text-center border-t border-zinc-900 pt-12">
-        <a href="mailto:bilal@hiveoptic.com" class="text-[10px] lowercase tracking-widest text-zinc-500 hover:text-white transition-colors">bilal@hiveoptic.com</a>
-        <p class="text-[8px] uppercase tracking-[0.8em] text-zinc-800 mt-4">© hiveoptic</p>
-    </footer>
-
-    <div id="video-modal" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-4 bg-black/90">
-        <button onclick="closeModal()" class="absolute top-6 right-6 text-white hover:text-zinc-400 transition-colors z-[210]">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-        </button>
-        <div class="w-full max-w-6xl aspect-video bg-black shadow-2xl relative">
-            <div id="video-container" class="w-full h-full"></div>
-        </div>
+    <div id="video-modal" class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-black/95 p-4">
+        <button onclick="closeModal()" class="absolute top-8 right-8 text-white hover:scale-110 transition-transform">✕</button>
+        <div id="video-container" class="w-full max-w-5xl aspect-video bg-zinc-950 shadow-2xl"></div>
     </div>
 
     <script>
-    const PROJECT_ID = "gi6q4yr8"; 
-    const DATASET = "production";
+        const PROJECT_ID = "gi6q4yr8";
+        const DATASET = "production";
+        let allProjects = [];
+        let activeFilters = { client: 'all', cat: 'all' };
+        let currentView = 'grid';
 
-    async function initArchive() {
-        const grid = document.getElementById('portfolio-grid');
-        const counter = document.getElementById('project-counter');
-        const status = document.getElementById('status-tag');
-        
-        console.log("Attempting to connect to Sanity...");
-
-        if (!PROJECT_ID || PROJECT_ID === "PASTE_YOUR_ID_HERE") {
-            status.innerText = "ID MISSING";
-            return;
+        async function init() {
+            const Q = encodeURIComponent('*[_type == "project"] | order(order asc)');
+            const URL = `https://${PROJECT_ID}.api.sanity.io/v2021-10-21/data/query/${DATASET}?query=${Q}`;
+            
+            try {
+                const r = await fetch(URL);
+                const { result } = await r.json();
+                allProjects = result;
+                updateGridDensity(document.getElementById('grid-select').value);
+                applyFilters();
+            } catch (e) {
+                document.getElementById('status-tag').innerText = "OFFLINE";
+                document.getElementById('status-tag').className = "text-[8px] uppercase text-red-500";
+            }
         }
 
-        const QUERY = encodeURIComponent('*[_type == "project"] | order(order asc)');
-        const API_URL = `https://${PROJECT_ID}.api.sanity.io/v2021-10-21/data/query/${DATASET}?query=${QUERY}`;
-        
-        try {
-            const response = await fetch(API_URL);
-            
-            if (!response.ok) {
-                const error_text = await response.text(); 
-                console.error("Sanity API Error:", error_text);
-                status.innerText = "API ERROR";
-                return;
+        function setView(view) {
+            currentView = view;
+            const densityCtrl = document.getElementById('density-control');
+            const btnGrid = document.getElementById('btn-grid');
+            const btnList = document.getElementById('btn-list');
+
+            if(view === 'list') {
+                densityCtrl.style.opacity = '0.2';
+                densityCtrl.style.pointerEvents = 'none';
+                btnList.classList.add('active');
+                btnGrid.classList.remove('active');
+            } else {
+                densityCtrl.style.opacity = '1';
+                densityCtrl.style.pointerEvents = 'auto';
+                btnGrid.classList.add('active');
+                btnList.classList.remove('active');
             }
+            applyFilters();
+        }
 
-            const { result } = await response.json();
-            console.log("Sanity data received:", result);
-            
-            if (!result || result.length === 0) {
-                status.innerText = "NO DATA FOUND";
-                status.className = "text-[10px] text-yellow-500 uppercase tracking-widest";
-                return;
-            }
+        function updateGridDensity(val) {
+            if(currentView !== 'grid') return;
+            document.getElementById('portfolio-grid').style.gridTemplateColumns = `repeat(${val}, minmax(0, 1fr))`;
+        }
 
-            grid.innerHTML = '';
-            counter.innerText = result.length.toString().padStart(3, '0');
-
-            result.forEach(p => {
-                let thumbUrl = "";
-                let videoUrl = p.videoUrl || "";
-                let embedUrl = "";
-
-                // Handle Thumbnail Logic
-                if (p.thumbnail && p.thumbnail.asset) {
-                    thumbUrl = `https://cdn.sanity.io/images/${PROJECT_ID}/${DATASET}/${p.thumbnail.asset._ref.replace('image-', '').replace('-jpg', '.jpg').replace('-png', '.png').replace('-webp', '.webp')}?w=600&h=600&fit=crop`;
+        function setFilter(type, value) {
+            activeFilters[type] = value;
+            const btns = document.querySelectorAll(`.${type}-link`);
+            btns.forEach(b => {
+                if(b.innerText.toLowerCase() === value.toLowerCase()) {
+                    b.classList.add(type === 'client' ? 'active-client' : 'active-cat');
                 } else {
-                    if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
-                        const ytId = videoUrl.split('v=')[1]?.split('&')[0] || videoUrl.split('/').pop();
-                        thumbUrl = `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`;
-                        embedUrl = `https://www.youtube.com/embed/${ytId}`;
-                    } else if (videoUrl.includes('vimeo.com')) {
-                        const vimeoId = videoUrl.split('/').pop();
-                        thumbUrl = `https://vumbnail.com/${vimeoId}.jpg`;
-                        embedUrl = `https://player.vimeo.com/video/${vimeoId}`;
-                    }
+                    b.classList.remove(type === 'client' ? 'active-client' : 'active-cat');
                 }
-
-                const div = document.createElement('div');
-                div.className = "project-card relative aspect-square cursor-pointer bg-zinc-950 overflow-hidden";
-                div.onclick = () => openModal(embedUrl || videoUrl);
-                
-                div.innerHTML = `
-                    <img src="${thumbUrl}" alt="${p.title}" loading="lazy" 
-                         onerror="this.src='https://picsum.photos/seed/${p._id}/400/400'"
-                         class="w-full h-full object-cover grayscale brightness-50">
-                    <div class="project-overlay absolute inset-0 flex flex-col justify-end p-1.5 pointer-events-none">
-                        <h3 class="text-[7px] font-light lowercase truncate opacity-80 text-white">${p.title || 'Untitled'}</h3>
-                    </div>
-                `;
-                grid.appendChild(div);
             });
-
-            // Connection successful
-            status.innerText = "Synchronized";
-            status.className = "text-[10px] text-green-500 uppercase tracking-widest";
-
-        } catch (e) {
-            console.error("Critical Connection Error:", e);
-            status.innerText = "CONNECTION FAILED";
-        }
-    }
-
-    function openModal(videoUrl) {
-        if (!videoUrl) return;
-        const modal = document.getElementById('video-modal');
-        const container = document.getElementById('video-container');
-        
-        modal.classList.remove('hidden');
-        modal.classList.add('modal-active');
-        
-        // Ensure autoplay and correct embed params
-        let finalUrl = videoUrl;
-        if (finalUrl.includes('?')) {
-            finalUrl += "&autoplay=1";
-        } else {
-            finalUrl += "?autoplay=1";
+            applyFilters();
         }
 
-        container.innerHTML = `<iframe src="${finalUrl}" class="w-full h-full" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
-        document.body.style.overflow = 'hidden';
-    }
+        function applyFilters() {
+            let filtered = allProjects;
+            if (activeFilters.client !== 'all') filtered = filtered.filter(p => p.clientTag === activeFilters.client);
+            if (activeFilters.cat !== 'all') filtered = filtered.filter(p => p.categoryTags && p.categoryTags.includes(activeFilters.cat));
+            render(filtered);
+        }
 
-    function closeModal() {
-        const modal = document.getElementById('video-modal');
-        modal.classList.add('hidden');
-        modal.classList.remove('modal-active');
-        document.getElementById('video-container').innerHTML = '';
-        document.body.style.overflow = 'auto';
-    }
+        function render(data) {
+            const grid = document.getElementById('portfolio-grid');
+            document.getElementById('project-counter').innerText = data.length.toString().padStart(3, '0');
+            
+            if (currentView === 'list') {
+                grid.style.gridTemplateColumns = '1fr';
+                grid.innerHTML = data.map(p => `
+                    <div onclick="openModal('${p.videoUrl}')" class="list-view-item flex items-center justify-between py-3 px-2 cursor-pointer group">
+                        <div class="flex items-center gap-6">
+                            <span class="text-[9px] text-zinc-700 font-mono">${(allProjects.indexOf(p)+1).toString().padStart(3, '0')}</span>
+                            <h3 class="text-[11px] uppercase tracking-widest text-zinc-400 group-hover:text-white transition-colors">${p.title}</h3>
+                        </div>
+                        <div class="flex gap-8 items-center">
+                            <span class="text-[8px] uppercase tracking-tighter text-zinc-600">${p.clientTag || '—'}</span>
+                            <span class="text-[8px] text-amber-600 uppercase tracking-tighter w-24 text-right">${p.categoryTags?.join(', ') || ''}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                updateGridDensity(document.getElementById('grid-select').value);
+                grid.innerHTML = data.map(p => {
+                    let thumbUrl = `https://picsum.photos/seed/${p._id}/400/400`;
+                    if (p.thumbnail?.asset?._ref) {
+                        thumbUrl = `https://cdn.sanity.io/images/${PROJECT_ID}/${DATASET}/${p.thumbnail.asset._ref.replace('image-', '').replace('-jpg', '.jpg').replace('-png', '.png')}?w=400&h=400&fit=crop`;
+                    } else if (p.videoUrl.includes('youtube.com') || p.videoUrl.includes('youtu.be')) {
+                        const id = p.videoUrl.split('v=')[1]?.split('&')[0] || p.videoUrl.split('/').pop();
+                        thumbUrl = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
+                    }
 
-    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
-    window.onload = initArchive;
-</script>
+                    return `
+                        <div onclick="openModal('${p.videoUrl}')" class="project-card aspect-square bg-zinc-900 relative cursor-pointer group overflow-hidden">
+                            <img src="${thumbUrl}" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 brightness-[0.4] group-hover:brightness-100">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-end">
+                                <p class="text-[6px] text-amber-500 uppercase tracking-tighter">${p.clientTag || ''}</p>
+                                <h3 class="text-[8px] lowercase truncate tracking-tight text-white">${p.title}</h3>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function openModal(url) {
+            const modal = document.getElementById('video-modal');
+            const container = document.getElementById('video-container');
+            let embed = url;
+            if (url.includes('youtube.com/shorts/')) embed = url.replace('shorts/', 'embed/');
+            else if (url.includes('vimeo.com')) embed = `https://player.vimeo.com/video/${url.split('/').pop()}`;
+            container.innerHTML = `<iframe src="${embed}?autoplay=1" class="w-full h-full" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('video-modal').classList.add('hidden');
+            document.getElementById('video-container').innerHTML = '';
+        }
+
+        window.onload = init;
+    </script>
 </body>
 </html>
