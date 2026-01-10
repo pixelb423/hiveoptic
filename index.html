@@ -9,54 +9,48 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #000; color: #fff; margin: 0; }
         .tracking-ultra { letter-spacing: 0.6em; }
-        .tag-btn { transition: all 0.3s ease; border-bottom: 1px solid transparent; cursor: pointer; }
+        .tag-btn { transition: all 0.3s ease; border-bottom: 1px solid transparent; cursor: pointer; white-space: nowrap; }
         .tag-btn.active-client { color: #fff; border-color: #fff; }
         .tag-btn.active-cat { color: #fbbf24; border-color: #fbbf24; }
         
-        #portfolio-grid { transition: opacity 0.3s ease; }
-        
+        /* Ensure main content starts AFTER the fixed header */
+        main { padding-top: 200px; } 
+
         .project-card { transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 1; }
         .project-card:hover { transform: scale(1.1); z-index: 50; }
         
-        .list-view-item { border-bottom: 1px solid #111; transition: background 0.2s; }
-        .list-view-item:hover { background: #0a0a0a; }
-
-        ::-webkit-scrollbar { width: 2px; }
-        ::-webkit-scrollbar-thumb { background: #333; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
         /* Custom Select Styling */
         .custom-select {
-            appearance: none;
-            background: #111;
-            border: 1px solid #222;
-            color: #666;
-            padding: 4px 24px 4px 8px;
-            font-size: 9px;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            cursor: pointer;
-            border-radius: 2px;
-            outline: none;
+            appearance: none; background: #111; border: 1px solid #222; color: #666;
+            padding: 4px 24px 4px 8px; font-size: 9px; text-transform: uppercase;
+            cursor: pointer; outline: none; border-radius: 2px;
         }
         .custom-select:hover { border-color: #444; color: #fff; }
-        
-        .icon-btn { opacity: 0.4; transition: opacity 0.2s; cursor: pointer; }
-        .icon-btn.active { opacity: 1; color: #fff; }
+
+        .icon-btn { opacity: 0.3; transition: opacity 0.2s; cursor: pointer; color: #fff; }
+        .icon-btn.active { opacity: 1; }
+
+        /* List View Styles */
+        .list-view-item { border-bottom: 1px solid #111; transition: background 0.2s; }
+        .list-view-item:hover { background: #0a0a0a; }
+
+        #video-modal { backdrop-filter: blur(10px); }
     </style>
 </head>
-<body class="pt-56 p-4 md:p-8">
+<body class="p-4 md:p-8">
 
-    <nav class="fixed top-0 left-0 w-full z-[100] bg-black/90 backdrop-blur-xl border-b border-zinc-900 p-6 md:px-12">
-        <div class="flex justify-between items-start mb-6">
+    <nav class="fixed top-0 left-0 w-full z-[100] bg-black/95 border-b border-zinc-900 p-6 md:px-12">
+        <div class="flex justify-between items-start mb-8">
             <div>
                 <h1 class="text-sm font-light lowercase tracking-ultra">bilal</h1>
                 <p class="text-[8px] uppercase tracking-[0.3em] text-zinc-600">multi-threaded archive</p>
             </div>
 
-            <!-- VIEW CONTROLS -->
+            <!-- VIEW & DENSITY CONTROLS -->
             <div class="flex items-center gap-6 bg-zinc-900/30 p-2 rounded-sm border border-zinc-800/50">
-                <!-- View Mode Icons -->
+                <!-- Icons for List/Grid -->
                 <div class="flex gap-4 border-r border-zinc-800 pr-4">
                     <button onclick="setView('grid')" id="btn-grid" class="icon-btn active" title="Grid View">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
@@ -65,83 +59,51 @@
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
                     </button>
                 </div>
-                
-                <!-- Density Dropdown -->
+
+                <!-- Dropdown for Columns -->
                 <div id="density-control" class="flex items-center gap-3">
                     <span class="text-[8px] uppercase text-zinc-600 tracking-tighter">Cols</span>
-                    <div class="relative">
-                        <select id="grid-select" onchange="updateGridDensity(this.value)" class="custom-select">
-                            <option value="3">3</option>
-                            <option value="5">5</option>
-                            <option value="8">8</option>
-                            <option value="12" selected>12</option>
-                            <option value="24">24</option>
-                        </select>
-                    </div>
+                    <select id="grid-select" onchange="updateGridDensity(this.value)" class="custom-select">
+                        <option value="3">3</option>
+                        <option value="5">5</option>
+                        <option value="8">8</option>
+                        <option value="12" selected>12</option>
+                        <option value="24">24</option>
+                    </select>
                 </div>
 
                 <div class="text-right border-l border-zinc-800 pl-6">
                     <span id="project-counter" class="text-xl font-light">000</span>
-                    <p id="status-tag" class="text-[8px] uppercase tracking-widest text-green-500">sync</p>
+                    <p id="status-tag" class="text-[8px] uppercase tracking-widest text-green-500">syncing</p>
                 </div>
             </div>
         </div>
         
-        <!-- FILTER INTERFACE -->
         <div class="space-y-4">
-            <div class="flex gap-4 text-[9px] uppercase tracking-widest text-zinc-500 items-center overflow-x-auto no-scrollbar">
-                <span class="text-zinc-800 pr-2">Client //</span>
-                <button onclick="setFilter('client', 'all')" class="tag-btn client-link active-client">All</button>
-                <button onclick="setFilter('client', 'hk')" class="tag-btn client-link">HK</button>
-                <button onclick="setFilter('client', 'nike')" class="tag-btn client-link">Nike</button>
-                <button onclick="setFilter('client', 'adidas')" class="tag-btn client-link">Adidas</button>
-                <button onclick="setFilter('client', 'personal')" class="tag-btn client-link">Personal</button>
+            <div id="client-row" class="flex gap-4 text-[9px] uppercase tracking-widest text-zinc-500 items-center overflow-x-auto no-scrollbar">
+                <span class="text-zinc-800 pr-2 italic">fetching clients...</span>
             </div>
-
-            <div class="flex gap-4 text-[9px] uppercase tracking-widest text-zinc-600 items-center overflow-x-auto no-scrollbar">
-                <span class="text-zinc-800 pr-2">Genre //</span>
-                <button onclick="setFilter('cat', 'all')" class="tag-btn cat-link active-cat">All</button>
-                <button onclick="setFilter('cat', 'chocolate')" class="tag-btn cat-link hover:text-amber-500">Chocolate</button>
-                <button onclick="setFilter('cat', 'beverage')" class="tag-btn cat-link hover:text-amber-500">Beverage</button>
-                <button onclick="setFilter('cat', 'fashion')" class="tag-btn cat-link hover:text-amber-500">Fashion</button>
-                <button onclick="setFilter('cat', 'shorts')" class="tag-btn cat-link hover:text-amber-500">Shorts</button>
-                <button onclick="setFilter('cat', 'commercial')" class="tag-btn cat-link hover:text-amber-500">Commercial</button>
+            <div id="category-row" class="flex gap-4 text-[9px] uppercase tracking-widest text-zinc-600 items-center overflow-x-auto no-scrollbar">
+                <span class="text-zinc-800 pr-2 italic">fetching genres...</span>
             </div>
         </div>
     </nav>
 
-    <main id="portfolio-grid" class="grid gap-1">
-        <!-- Projects injected here -->
+    <main>
+        <div id="portfolio-grid" class="grid gap-1">
+            <!-- Content Injected via JS -->
+        </div>
     </main>
 
+    <!-- VIDEO MODAL -->
     <div id="video-modal" class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-black/95 p-4">
         <button onclick="closeModal()" class="absolute top-8 right-8 text-white hover:scale-110 transition-transform">✕</button>
         <div id="video-container" class="w-full max-w-5xl aspect-video bg-zinc-950 shadow-2xl"></div>
     </div>
 
+    <script src="sanity-fetch.js"></script>
     <script>
-        const PROJECT_ID = "gi6q4yr8";
-        const DATASET = "production";
-        let allProjects = [];
-        let activeFilters = { client: 'all', cat: 'all' };
-        let currentView = 'grid';
-
-        async function init() {
-            const Q = encodeURIComponent('*[_type == "project"] | order(order asc)');
-            const URL = `https://${PROJECT_ID}.api.sanity.io/v2021-10-21/data/query/${DATASET}?query=${Q}`;
-            
-            try {
-                const r = await fetch(URL);
-                const { result } = await r.json();
-                allProjects = result;
-                updateGridDensity(document.getElementById('grid-select').value);
-                applyFilters();
-            } catch (e) {
-                document.getElementById('status-tag').innerText = "OFFLINE";
-                document.getElementById('status-tag').className = "text-[8px] uppercase text-red-500";
-            }
-        }
-
+        // UI Interaction Functions
         function setView(view) {
             currentView = view;
             const densityCtrl = document.getElementById('density-control');
@@ -159,7 +121,7 @@
                 btnGrid.classList.add('active');
                 btnList.classList.remove('active');
             }
-            applyFilters();
+            applyFilters(); // Re-render with new view mode
         }
 
         function updateGridDensity(val) {
@@ -167,84 +129,26 @@
             document.getElementById('portfolio-grid').style.gridTemplateColumns = `repeat(${val}, minmax(0, 1fr))`;
         }
 
-        function setFilter(type, value) {
-            activeFilters[type] = value;
-            const btns = document.querySelectorAll(`.${type}-link`);
-            btns.forEach(b => {
-                if(b.innerText.toLowerCase() === value.toLowerCase()) {
-                    b.classList.add(type === 'client' ? 'active-client' : 'active-cat');
-                } else {
-                    b.classList.remove(type === 'client' ? 'active-client' : 'active-cat');
-                }
-            });
-            applyFilters();
-        }
-
-        function applyFilters() {
-            let filtered = allProjects;
-            if (activeFilters.client !== 'all') filtered = filtered.filter(p => p.clientTag === activeFilters.client);
-            if (activeFilters.cat !== 'all') filtered = filtered.filter(p => p.categoryTags && p.categoryTags.includes(activeFilters.cat));
-            render(filtered);
-        }
-
-        function render(data) {
-            const grid = document.getElementById('portfolio-grid');
-            document.getElementById('project-counter').innerText = data.length.toString().padStart(3, '0');
-            
-            if (currentView === 'list') {
-                grid.style.gridTemplateColumns = '1fr';
-                grid.innerHTML = data.map(p => `
-                    <div onclick="openModal('${p.videoUrl}')" class="list-view-item flex items-center justify-between py-3 px-2 cursor-pointer group">
-                        <div class="flex items-center gap-6">
-                            <span class="text-[9px] text-zinc-700 font-mono">${(allProjects.indexOf(p)+1).toString().padStart(3, '0')}</span>
-                            <h3 class="text-[11px] uppercase tracking-widest text-zinc-400 group-hover:text-white transition-colors">${p.title}</h3>
-                        </div>
-                        <div class="flex gap-8 items-center">
-                            <span class="text-[8px] uppercase tracking-tighter text-zinc-600">${p.clientTag || '—'}</span>
-                            <span class="text-[8px] text-amber-600 uppercase tracking-tighter w-24 text-right">${p.categoryTags?.join(', ') || ''}</span>
-                        </div>
-                    </div>
-                `).join('');
-            } else {
-                updateGridDensity(document.getElementById('grid-select').value);
-                grid.innerHTML = data.map(p => {
-                    let thumbUrl = `https://picsum.photos/seed/${p._id}/400/400`;
-                    if (p.thumbnail?.asset?._ref) {
-                        thumbUrl = `https://cdn.sanity.io/images/${PROJECT_ID}/${DATASET}/${p.thumbnail.asset._ref.replace('image-', '').replace('-jpg', '.jpg').replace('-png', '.png')}?w=400&h=400&fit=crop`;
-                    } else if (p.videoUrl.includes('youtube.com') || p.videoUrl.includes('youtu.be')) {
-                        const id = p.videoUrl.split('v=')[1]?.split('&')[0] || p.videoUrl.split('/').pop();
-                        thumbUrl = `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
-                    }
-
-                    return `
-                        <div onclick="openModal('${p.videoUrl}')" class="project-card aspect-square bg-zinc-900 relative cursor-pointer group overflow-hidden">
-                            <img src="${thumbUrl}" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 brightness-[0.4] group-hover:brightness-100">
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-end">
-                                <p class="text-[6px] text-amber-500 uppercase tracking-tighter">${p.clientTag || ''}</p>
-                                <h3 class="text-[8px] lowercase truncate tracking-tight text-white">${p.title}</h3>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            }
-        }
-
         function openModal(url) {
+            if (!url) return;
             const modal = document.getElementById('video-modal');
             const container = document.getElementById('video-container');
             let embed = url;
             if (url.includes('youtube.com/shorts/')) embed = url.replace('shorts/', 'embed/');
             else if (url.includes('vimeo.com')) embed = `https://player.vimeo.com/video/${url.split('/').pop()}`;
+            
             container.innerHTML = `<iframe src="${embed}?autoplay=1" class="w-full h-full" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
             modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
         }
 
         function closeModal() {
             document.getElementById('video-modal').classList.add('hidden');
             document.getElementById('video-container').innerHTML = '';
+            document.body.style.overflow = 'auto';
         }
 
-        window.onload = init;
+        window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
     </script>
 </body>
 </html>
