@@ -13,15 +13,14 @@
         .tag-btn.active-client { color: #fff; border-color: #fff; }
         .tag-btn.active-cat { color: #fbbf24; border-color: #fbbf24; }
         
-        /* Ensure main content starts AFTER the fixed header */
-        main { padding-top: 200px; } 
+        /* Fixed Header Offset */
+        main { padding-top: 220px; } 
 
         .project-card { transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 1; }
         .project-card:hover { transform: scale(1.1); z-index: 50; }
         
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
-        /* Custom Select Styling */
         .custom-select {
             appearance: none; background: #111; border: 1px solid #222; color: #666;
             padding: 4px 24px 4px 8px; font-size: 9px; text-transform: uppercase;
@@ -29,14 +28,13 @@
         }
         .custom-select:hover { border-color: #444; color: #fff; }
 
-        .icon-btn { opacity: 0.3; transition: opacity 0.2s; cursor: pointer; color: #fff; }
+        .icon-btn { opacity: 0.3; transition: opacity 0.2s; cursor: pointer; color: #fff; border: none; background: none; }
         .icon-btn.active { opacity: 1; }
 
-        /* List View Styles */
         .list-view-item { border-bottom: 1px solid #111; transition: background 0.2s; }
         .list-view-item:hover { background: #0a0a0a; }
 
-        #video-modal { backdrop-filter: blur(10px); }
+        #video-modal { backdrop-filter: blur(15px); }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -48,9 +46,7 @@
                 <p class="text-[8px] uppercase tracking-[0.3em] text-zinc-600">multi-threaded archive</p>
             </div>
 
-            <!-- VIEW & DENSITY CONTROLS -->
             <div class="flex items-center gap-6 bg-zinc-900/30 p-2 rounded-sm border border-zinc-800/50">
-                <!-- Icons for List/Grid -->
                 <div class="flex gap-4 border-r border-zinc-800 pr-4">
                     <button onclick="setView('grid')" id="btn-grid" class="icon-btn active" title="Grid View">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
@@ -60,7 +56,6 @@
                     </button>
                 </div>
 
-                <!-- Dropdown for Columns -->
                 <div id="density-control" class="flex items-center gap-3">
                     <span class="text-[8px] uppercase text-zinc-600 tracking-tighter">Cols</span>
                     <select id="grid-select" onchange="updateGridDensity(this.value)" class="custom-select">
@@ -74,36 +69,32 @@
 
                 <div class="text-right border-l border-zinc-800 pl-6">
                     <span id="project-counter" class="text-xl font-light">000</span>
-                    <p id="status-tag" class="text-[8px] uppercase tracking-widest text-green-500">syncing</p>
+                    <p id="status-tag" class="text-[8px] uppercase tracking-widest text-green-500 italic">syncing</p>
                 </div>
             </div>
         </div>
         
         <div class="space-y-4">
             <div id="client-row" class="flex gap-4 text-[9px] uppercase tracking-widest text-zinc-500 items-center overflow-x-auto no-scrollbar">
-                <span class="text-zinc-800 pr-2 italic">fetching clients...</span>
+                <span class="text-zinc-800 pr-2">Clients //</span>
             </div>
             <div id="category-row" class="flex gap-4 text-[9px] uppercase tracking-widest text-zinc-600 items-center overflow-x-auto no-scrollbar">
-                <span class="text-zinc-800 pr-2 italic">fetching genres...</span>
+                <span class="text-zinc-800 pr-2">Genres //</span>
             </div>
         </div>
     </nav>
 
     <main>
-        <div id="portfolio-grid" class="grid gap-1">
-            <!-- Content Injected via JS -->
-        </div>
+        <div id="portfolio-grid" class="grid gap-1"></div>
     </main>
 
-    <!-- VIDEO MODAL -->
     <div id="video-modal" class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-black/95 p-4">
-        <button onclick="closeModal()" class="absolute top-8 right-8 text-white hover:scale-110 transition-transform">✕</button>
+        <button onclick="closeModal()" class="absolute top-8 right-8 text-white hover:scale-110 transition-transform text-2xl">✕</button>
         <div id="video-container" class="w-full max-w-5xl aspect-video bg-zinc-950 shadow-2xl"></div>
     </div>
 
     <script src="sanity-fetch.js"></script>
     <script>
-        // UI Interaction Functions
         function setView(view) {
             currentView = view;
             const densityCtrl = document.getElementById('density-control');
@@ -121,7 +112,7 @@
                 btnGrid.classList.add('active');
                 btnList.classList.remove('active');
             }
-            applyFilters(); // Re-render with new view mode
+            applyFilters();
         }
 
         function updateGridDensity(val) {
@@ -136,6 +127,7 @@
             let embed = url;
             if (url.includes('youtube.com/shorts/')) embed = url.replace('shorts/', 'embed/');
             else if (url.includes('vimeo.com')) embed = `https://player.vimeo.com/video/${url.split('/').pop()}`;
+            else if (url.includes('youtube.com/watch')) embed = `https://www.youtube.com/embed/${url.split('v=')[1]?.split('&')[0]}`;
             
             container.innerHTML = `<iframe src="${embed}?autoplay=1" class="w-full h-full" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
             modal.classList.remove('hidden');
@@ -147,8 +139,6 @@
             document.getElementById('video-container').innerHTML = '';
             document.body.style.overflow = 'auto';
         }
-
-        window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
     </script>
 </body>
 </html>
