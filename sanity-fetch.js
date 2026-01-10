@@ -264,3 +264,6 @@ function applyFilters() {
 }
 
 window.onload = initArchive;
+
+
+// Updated)
