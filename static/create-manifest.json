@@ -1,0 +1,20 @@
+{
+  "version": 3,
+  "createdAt": "2026-01-10T21:19:36.592Z",
+  "workspaces": [
+    {
+      "name": "default",
+      "title": "hiveoptic",
+      "basePath": "/",
+      "projectId": "gi6q4yr8",
+      "dataset": "production",
+      "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\"><rect width=\"32\" height=\"32\" rx=\"2\" fill=\"#18e2e2\"></rect><text x=\"50%\" y=\"50%\" text-anchor=\"middle\" alignment-baseline=\"middle\" fill=\"hsla(180, 81%, 9%, 1)\" style=\"font-family:Inter, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, &quot;Liberation Sans&quot;, Helvetica, Arial, system-ui, sans-serif;font-weight:500;font-size:13px;transform:translateY(1px)\">H</text></svg>",
+      "mediaLibrary": {
+        "enabled": false
+      },
+      "schema": "79cd665b.create-schema.json",
+      "tools": "ba47da56.create-tools.json"
+    }
+  ],
+  "studioVersion": "5.2.0"
+}

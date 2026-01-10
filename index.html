@@ -1,144 +1,272 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>bilal | archive</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #000; color: #fff; margin: 0; }
-        .tracking-ultra { letter-spacing: 0.6em; }
-        .tag-btn { transition: all 0.3s ease; border-bottom: 1px solid transparent; cursor: pointer; white-space: nowrap; }
-        .tag-btn.active-client { color: #fff; border-color: #fff; }
-        .tag-btn.active-cat { color: #fbbf24; border-color: #fbbf24; }
-        
-        /* Fixed Header Offset */
-        main { padding-top: 220px; } 
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"><meta name="robots" content="noindex"><meta name="referrer" content="same-origin"><link rel="icon" href="/static/favicon.ico" sizes="any"><link rel="icon" href="/static/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/static/apple-touch-icon.png"><link rel="manifest" href="/static/manifest.webmanifest"><title>Sanity Studio</title><script>
+;(function () {
+  // The error channel is provided so that error handling can be delegated to a view component.
+  // If there is a subscriber to the error channel at the time the error happens, the error will be pushed to the subscriber instead of handled here.
+  var errorChannel = (function () {
+    var subscribers = Object.create(null)
+    var nextId = 0
+    function subscribe(subscriber) {
+      var id = nextId++
+      subscribers[id] = subscriber
+      return function unsubscribe() {
+        delete subscribers[id]
+      }
+    }
 
-        .project-card { transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 1; }
-        .project-card:hover { transform: scale(1.1); z-index: 50; }
-        
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        
-        .custom-select {
-            appearance: none; background: #111; border: 1px solid #222; color: #666;
-            padding: 4px 24px 4px 8px; font-size: 9px; text-transform: uppercase;
-            cursor: pointer; outline: none; border-radius: 2px;
+    function publish(event) {
+      for (var id in subscribers) {
+        if (Object.hasOwn(subscribers, id)) {
+          subscribers[id](event)
         }
-        .custom-select:hover { border-color: #444; color: #fff; }
+      }
+    }
+    return {
+      subscribers,
+      publish,
+      subscribe
+    }
+  })()
 
-        .icon-btn { opacity: 0.3; transition: opacity 0.2s; cursor: pointer; color: #fff; border: none; background: none; }
-        .icon-btn.active { opacity: 1; }
+  // NOTE: Store the error channel instance in the global scope so that the Studio application can
+  // access it and subscribe to errors.
+  window.__sanityErrorChannel = {
+    subscribe: errorChannel.subscribe
+  }
 
-        .list-view-item { border-bottom: 1px solid #111; transition: background 0.2s; }
-        .list-view-item:hover { background: #0a0a0a; }
+  function _handleError(event) {
+    // If there are error channel subscribers, then we assume they will own error rendering,
+    // and we defer to them (no console error).
+    if (Object.keys(errorChannel.subscribers).length > 0) {
+      errorChannel.publish(event)
+    } else {
+      _renderErrorOverlay(event)
+    }
+  }
 
-        #video-modal { backdrop-filter: blur(15px); }
-    </style>
-</head>
-<body class="p-4 md:p-8">
+  var ERROR_BOX_STYLE = [
+    'background: #fff',
+    'border-radius: 6px',
+    'box-sizing: border-box',
+    'color: #121923',
+    'flex: 1',
+    "font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue','Liberation Sans',Helvetica,Arial,system-ui,sans-serif",
+    'font-size: 16px',
+    'line-height: 21px',
+    'margin: 0 auto',
+    'max-width: 960px',
+    'max-height: 90dvh',
+    'overflow: auto',
+    'padding: 20px',
+    'width: 100%',
+  ].join(';')
 
-    <nav class="fixed top-0 left-0 w-full z-[100] bg-black/95 border-b border-zinc-900 p-6 md:px-12">
-        <div class="flex justify-between items-start mb-8">
-            <div>
-                <h1 class="text-sm font-light lowercase tracking-ultra">bilal</h1>
-                <p class="text-[8px] uppercase tracking-[0.3em] text-zinc-600">multi-threaded archive</p>
-            </div>
+  var ERROR_CODE_STYLE = [
+    'color: #972E2A',
+    "font-family: -apple-system-ui-monospace, 'SF Mono', Menlo, Monaco, Consolas, monospace",
+    'font-size: 13px',
+    'line-height: 17px',
+    'margin: 0',
+  ].join(';')
 
-            <div class="flex items-center gap-6 bg-zinc-900/30 p-2 rounded-sm border border-zinc-800/50">
-                <div class="flex gap-4 border-r border-zinc-800 pr-4">
-                    <button onclick="setView('grid')" id="btn-grid" class="icon-btn active" title="Grid View">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                    </button>
-                    <button onclick="setView('list')" id="btn-list" class="icon-btn" title="List View">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-                    </button>
-                </div>
+  function _renderErrorOverlay(event) {
+    var errorElement = document.querySelector('#__sanityError') || document.createElement('div')
+    var error = event.error
+    var colno = event.colno
+    var lineno = event.lineno
+    var filename = event.filename
 
-                <div id="density-control" class="flex items-center gap-3">
-                    <span class="text-[8px] uppercase text-zinc-600 tracking-tighter">Cols</span>
-                    <select id="grid-select" onchange="updateGridDensity(this.value)" class="custom-select">
-                        <option value="3">3</option>
-                        <option value="5">5</option>
-                        <option value="8">8</option>
-                        <option value="12" selected>12</option>
-                        <option value="24">24</option>
-                    </select>
-                </div>
+    errorElement.id = '__sanityError'
+    errorElement.innerHTML = [
+      '<div style="' + ERROR_BOX_STYLE + '">',
+      '<div style="font-weight: 700;">Uncaught error: ' + error.message + '</div>',
+      '<div style="color: #515E72; font-size: 13px; line-height: 17px; margin: 10px 0;">' +
+        filename +
+        ':' +
+        lineno +
+        ':' +
+        colno +
+        '</div>',
+      '<pre style="' + ERROR_CODE_STYLE + '">' + error.stack + '</pre>',
+      '</div>',
+    ].join('')
 
-                <div class="text-right border-l border-zinc-800 pl-6">
-                    <span id="project-counter" class="text-xl font-light">000</span>
-                    <p id="status-tag" class="text-[8px] uppercase tracking-widest text-green-500 italic">syncing</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="space-y-4">
-            <div id="client-row" class="flex gap-4 text-[9px] uppercase tracking-widest text-zinc-500 items-center overflow-x-auto no-scrollbar">
-                <span class="text-zinc-800 pr-2">Clients //</span>
-            </div>
-            <div id="category-row" class="flex gap-4 text-[9px] uppercase tracking-widest text-zinc-600 items-center overflow-x-auto no-scrollbar">
-                <span class="text-zinc-800 pr-2">Genres //</span>
-            </div>
-        </div>
-    </nav>
+    errorElement.style.position = 'fixed'
+    errorElement.style.zIndex = 1000000
+    errorElement.style.top = 0
+    errorElement.style.left = 0
+    errorElement.style.right = 0
+    errorElement.style.bottom = 0
+    errorElement.style.padding = '20px'
+    errorElement.style.background = 'rgba(16,17,18,0.66)'
+    errorElement.style.display = 'flex'
+    errorElement.style.alignItems = 'center'
+    errorElement.style.justifyContent = 'center'
 
-    <main>
-        <div id="portfolio-grid" class="grid gap-1"></div>
-    </main>
+    document.body.appendChild(errorElement)
+  }
 
-    <div id="video-modal" class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-black/95 p-4">
-        <button onclick="closeModal()" class="absolute top-8 right-8 text-white hover:scale-110 transition-transform text-2xl">✕</button>
-        <div id="video-container" class="w-full max-w-5xl aspect-video bg-zinc-950 shadow-2xl"></div>
-    </div>
+  // Error listener
+  window.addEventListener('error', (event) => {
+    _handleError({
+      type: 'error',
+      error: event.error,
+      lineno: event.lineno,
+      colno: event.colno,
+      filename: event.filename
+    })
+  })
 
-    <script src="sanity-fetch.js"></script>
-    <script>
-        function setView(view) {
-            currentView = view;
-            const densityCtrl = document.getElementById('density-control');
-            const btnGrid = document.getElementById('btn-grid');
-            const btnList = document.getElementById('btn-list');
-
-            if(view === 'list') {
-                densityCtrl.style.opacity = '0.2';
-                densityCtrl.style.pointerEvents = 'none';
-                btnList.classList.add('active');
-                btnGrid.classList.remove('active');
-            } else {
-                densityCtrl.style.opacity = '1';
-                densityCtrl.style.pointerEvents = 'auto';
-                btnGrid.classList.add('active');
-                btnList.classList.remove('active');
-            }
-            applyFilters();
+  // Error listener
+  window.addEventListener('unhandledrejection', (event) => {
+    _handleError({
+      type: 'rejection',
+      error: event.reason
+    })
+  })
+})()
+</script><style>
+  @font-face {
+    font-family: Inter;
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("https://studio-static.sanity.io/Inter-Regular.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: Inter;
+    font-style: italic;
+    font-weight: 400;
+    font-display: swap;
+    src: url("https://studio-static.sanity.io/Inter-Italic.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: Inter;
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("https://studio-static.sanity.io/Inter-Medium.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: Inter;
+    font-style: italic;
+    font-weight: 500;
+    font-display: swap;
+    src: url("https://studio-static.sanity.io/Inter-MediumItalic.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: Inter;
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("https://studio-static.sanity.io/Inter-SemiBold.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: Inter;
+    font-style: italic;
+    font-weight: 600;
+    font-display: swap;
+    src: url("https://studio-static.sanity.io/Inter-SemiBoldItalic.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: Inter;
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("https://studio-static.sanity.io/Inter-Bold.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: Inter;
+    font-style: italic;
+    font-weight: 700;
+    font-display: swap;
+    src: url("https://studio-static.sanity.io/Inter-BoldItalic.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: Inter;
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url("https://studio-static.sanity.io/Inter-ExtraBold.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: Inter;
+    font-style: italic;
+    font-weight: 800;
+    font-display: swap;
+    src: url("https://studio-static.sanity.io/Inter-ExtraBoldItalic.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: Inter;
+    font-style: normal;
+    font-weight: 900;
+    font-display: swap;
+    src: url("https://studio-static.sanity.io/Inter-Black.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: Inter;
+    font-style: italic;
+    font-weight: 900;
+    font-display: swap;
+    src: url("https://studio-static.sanity.io/Inter-BlackItalic.woff2") format("woff2");
+  }
+  html {
+    @media (prefers-color-scheme: dark) {
+      background-color: #13141b;
+    }
+    @media (prefers-color-scheme: light) {
+      background-color: #ffffff;
+    }
+  }
+  html,
+  body,
+  #sanity {
+    height: 100%;
+  }
+  body {
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+</style><script type="application/json" id="__imports">{"imports":{"react":"/vendor/react/index-CVS62ceT.mjs","react/jsx-runtime":"/vendor/react/jsx-runtime-CInpRuN4.mjs","react/jsx-dev-runtime":"/vendor/react/jsx-dev-runtime-DYLplPiq.mjs","react/compiler-runtime":"/vendor/react/compiler-runtime-DFvlMPQC.mjs","react/package.json":"/vendor/react/package.json-B3Sv_Ots.mjs","react-dom":"/vendor/react-dom/index-B3pchmCn.mjs","react-dom/client":"/vendor/react-dom/client-BptInOSw.mjs","react-dom/server":"/vendor/react-dom/server-FfCSsckh.mjs","react-dom/static":"/vendor/react-dom/static-CN1Myo0a.mjs","react-dom/package.json":"/vendor/react-dom/package.json-CNqBlmzA.mjs","styled-components":"/vendor/styled-components/index-BwztmTDk.mjs","styled-components/package.json":"/vendor/styled-components/package.json-DIrwl5-T.mjs","react-dom/server.browser":"/vendor/react-dom/server.browser-BzpYnHww.mjs","react-dom/static.browser":"/vendor/react-dom/static.browser-BCHXHC4T.mjs","sanity":"https://sanity-cdn.com/v1/modules/sanity/default/%5E5.2.0/t1768079965","sanity/":"https://sanity-cdn.com/v1/modules/sanity/default/%5E5.2.0/t1768079965/","@sanity/vision":"https://sanity-cdn.com/v1/modules/@sanity__vision/default/%5E5.2.0/t1768079965","@sanity/vision/":"https://sanity-cdn.com/v1/modules/@sanity__vision/default/%5E5.2.0/t1768079965/"}}</script><script>
+  // auto-generated script to add import map with timestamp
+  const importsJson = document.getElementById('__imports')?.textContent;
+  const { imports = {}, ...rest } = importsJson ? JSON.parse(importsJson) : {};
+  const importMapEl = document.createElement('script');
+  importMapEl.type = 'importmap';
+  const newTimestamp = `/t${Math.floor(Date.now() / 1000)}`;
+  importMapEl.textContent = JSON.stringify({
+    imports: Object.fromEntries(
+      Object.entries(imports).map(([specifier, path]) => {
+        try {
+          const url = new URL(path);
+          if (/^sanity-cdn\.[a-zA-Z]+$/.test(url.hostname)) {
+            url.pathname = url.pathname.replace(/\/t\d+/, newTimestamp);
+          }
+          return [specifier, url.toString()];
+        } catch {
+          return [specifier, path];
         }
+      })
+    ),
+    ...rest,
+  });
+  document.head.appendChild(importMapEl);
+</script><script src="https://core.sanity-cdn.com/bridge.js" async type="module" data-sanity-core></script>
+</head><body><div id="sanity"></div><script type="module" src="/static/sanity-By1PupJb.js"></script><noscript><div class="sanity-app-no-js__root"><div class="sanity-app-no-js__content"><style type="text/css">
+.sanity-app-no-js__root {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  background: #fff;
+}
 
-        function updateGridDensity(val) {
-            if(currentView !== 'grid') return;
-            document.getElementById('portfolio-grid').style.gridTemplateColumns = `repeat(${val}, minmax(0, 1fr))`;
-        }
-
-        function openModal(url) {
-            if (!url) return;
-            const modal = document.getElementById('video-modal');
-            const container = document.getElementById('video-container');
-            let embed = url;
-            if (url.includes('youtube.com/shorts/')) embed = url.replace('shorts/', 'embed/');
-            else if (url.includes('vimeo.com')) embed = `https://player.vimeo.com/video/${url.split('/').pop()}`;
-            else if (url.includes('youtube.com/watch')) embed = `https://www.youtube.com/embed/${url.split('v=')[1]?.split('&')[0]}`;
-            
-            container.innerHTML = `<iframe src="${embed}?autoplay=1" class="w-full h-full" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
-            modal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeModal() {
-            document.getElementById('video-modal').classList.add('hidden');
-            document.getElementById('video-container').innerHTML = '';
-            document.body.style.overflow = 'auto';
-        }
-    </script>
-</body>
-</html>
+.sanity-app-no-js__content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  font-family: helvetica, arial, sans-serif;
+}
+</style><h1>JavaScript disabled</h1><p>Please <a href="https://www.enable-javascript.com/">enable JavaScript</a> in your browser and reload the page to proceed.</p></div></div></noscript></body></html>
