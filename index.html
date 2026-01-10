@@ -21,43 +21,40 @@
         ::-webkit-scrollbar-track { background: #000; }
         ::-webkit-scrollbar-thumb { background: #333; }
 
-        /* The Sticky Header - Solid Black */
         nav {
             background-color: #000000;
             border-bottom: 1px solid #111;
         }
 
-        /* High-Density Grid Interactions */
         .project-card {
             transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             z-index: 1;
         }
 
-        .-card:hover {
+        .project-card:hover {
             transform: scale(1.3);
             z-index: 50;
             box-shadow: 0 10px 40px rgba(0,0,0,0.9);
         }
 
-        .-card img {
+        .project-card img {
             transition: filter 0.5s ease;
         }
 
-        .-card:hover img {
+        .project-card:hover img {
             filter: grayscale(0%) brightness(1.2);
         }
 
-        .-overlay {
+        .project-overlay {
             background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
             opacity: 0;
             transition: opacity 0.3s ease;
         }
 
-        .-card:hover .-overlay {
+        .project-card:hover .project-overlay {
             opacity: 1;
         }
 
-        /* Video Modal Blur */
         .modal-active {
             animation: modalFadeIn 0.4s ease forwards;
         }
@@ -70,7 +67,6 @@
 </head>
 <body class="pt-24 md:pt-32 p-2 md:p-6">
 
-    <!-- FIXED SOLID HEADER -->
     <nav class="fixed top-0 left-0 w-full z-[100] p-4 md:p-8 flex justify-between items-center">
         <div>
             <h1 class="text-base font-light lowercase tracking-ultra">bilal</h1>
@@ -83,25 +79,22 @@
             </div>
             <div>
                 <p class="text-[9px] uppercase tracking-widest text-zinc-600 mb-0.5">total entries</p>
-                <span id="-counter" class="text-xl font-light">000</span>
+                <span id="project-counter" class="text-xl font-light">000</span>
             </div>
         </div>
     </nav>
 
-    <!-- THE ARCHIVE GRID -->
     <main class="w-full mx-auto px-1">
         <div id="portfolio-grid" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-1">
-            <!-- Content injected via JavaScript -->
+            <!-- Content injected via JS -->
         </div>
     </main>
 
-    <!-- FOOTER -->
     <footer class="mt-32 mb-12 text-center border-t border-zinc-900 pt-12">
         <a href="mailto:bilal@hiveoptic.com" class="text-[10px] lowercase tracking-widest text-zinc-500 hover:text-white transition-colors">bilal@hiveoptic.com</a>
         <p class="text-[8px] uppercase tracking-[0.8em] text-zinc-800 mt-4">© hiveoptic</p>
     </footer>
 
-    <!-- LIGHTBOX MODAL -->
     <div id="video-modal" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-4 bg-black/90">
         <button onclick="closeModal()" class="absolute top-6 right-6 text-white hover:text-zinc-400 transition-colors z-[210]">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -112,66 +105,73 @@
     </div>
 
     <script>
-        /** * CONFIGURATION 
-         * 1. Create a  at sanity.io
-         * 2. Replace _ID with your actual ID
-        */
-        const PROJECT_ID = "gi6q4yr8"; // <--- Put your Sanity Project ID here later
-        const DATASET = "production";
-        
-        // Local backup data to show something beautiful immediately
-        const backupData = Array.from({ length: 60 }, (_, i) => ({
-            title: `Archive Entry ${i + 1}`,
-            thumb: `https://picsum.photos/seed/hive${i}/400/400`,
-            video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
-        }));
+        // CONFIGURATION
+        const PROJECT_ID = "PASTE_YOUR_ID_HERE"; 
+        const DATASET = "gi6q4yr8";
 
         async function initArchive() {
             const grid = document.getElementById('portfolio-grid');
             const counter = document.getElementById('project-counter');
             const status = document.getElementById('status-tag');
             
-            let projects = backupData;
-
-            // Try to fetch from Sanity if ID is provided
-            if (PROJECT_ID !== "") {
-                const QUERY = encodeURIComponent('*[_type == "project"] | order(order asc)');
-                const API_URL = `https://${PROJECT_ID}.api.sanity.io/v2021-10-21/data/query/${DATASET}?query=${QUERY}`;
-                
-                try {
-                    const response = await fetch(API_URL);
-                    const { result } = await response.json();
-                    if (result && result.length > 0) {
-                        projects = result.map(p => ({
-                            title: p.title,
-                            // Sanity image CDN helper
-                            thumb: `https://cdn.sanity.io/images/${PROJECT_ID}/${DATASET}/${p.thumbnail.asset._ref.replace('image-', '').replace('-jpg', '.jpg').replace('-png', '.png')}?w=400&h=400&fit=crop`,
-                            video: p.videoUrl.includes('youtube.com') ? p.videoUrl.replace("watch?v=", "embed/") : p.videoUrl
-                        }));
-                        status.innerText = "Synchronized";
-                        status.classList.replace('text-zinc-400', 'text-green-500');
-                    }
-                } catch (e) {
-                    console.warn("Using local backup. Sanity ID might be incorrect or CORS needs setup.");
-                }
+            if (!PROJECT_ID || PROJECT_ID === "PASTE_YOUR_ID_HERE") {
+                console.warn("Please provide your Sanity Project ID.");
+                return;
             }
 
-            grid.innerHTML = '';
-            counter.innerText = projects.length.toString().padStart(3, '0');
-
-            projects.forEach(project => {
-                const div = document.createElement('div');
-                div.className = "project-card relative aspect-square cursor-pointer bg-zinc-950";
-                div.onclick = () => openModal(project.video);
+            const QUERY = encodeURIComponent('*[_type == "project"] | order(order asc)');
+            const API_URL = `https://${PROJECT_ID}.api.sanity.io/v2021-10-21/data/query/${DATASET}?query=${QUERY}`;
+            
+            try {
+                const response = await fetch(API_URL);
+                const { result } = await response.json();
                 
-                div.innerHTML = `
-                    <img src="${project.thumb}" alt="${project.title}" loading="lazy" class="w-full h-full object-cover grayscale brightness-50">
-                    <div class="project-overlay absolute inset-0 flex flex-col justify-end p-1 pointer-events-none">
-                        <h3 class="text-[7px] font-light lowercase truncate opacity-60">${project.title}</h3>
-                    </div>
-                `;
-                grid.appendChild(div);
-            });
+                if (!result || result.length === 0) return;
+
+                grid.innerHTML = '';
+                counter.innerText = result.length.toString().padStart(3, '0');
+
+                result.forEach(p => {
+                    let thumbUrl = "";
+                    let videoUrl = p.videoUrl || "";
+                    let embedUrl = "";
+
+                    // 1. Handle Thumbnail Logic
+                    if (p.thumbnail && p.thumbnail.asset) {
+                        thumbUrl = `https://cdn.sanity.io/images/${PROJECT_ID}/${DATASET}/${p.thumbnail.asset._ref.replace('image-', '').replace('-jpg', '.jpg').replace('-png', '.png')}?w=400&h=400&fit=crop`;
+                    } else {
+                        if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
+                            const ytId = videoUrl.split('v=')[1]?.split('&')[0] || videoUrl.split('/').pop();
+                            thumbUrl = `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`;
+                            embedUrl = `https://www.youtube.com/embed/${ytId}`;
+                        } else if (videoUrl.includes('vimeo.com')) {
+                            const vimeoId = videoUrl.split('/').pop();
+                            thumbUrl = `https://vumbnail.com/${vimeoId}.jpg`;
+                            embedUrl = `https://player.vimeo.com/video/${vimeoId}`;
+                        }
+                    }
+
+                    const div = document.createElement('div');
+                    div.className = "project-card relative aspect-square cursor-pointer bg-zinc-950";
+                    div.onclick = () => openModal(embedUrl || videoUrl);
+                    
+                    div.innerHTML = `
+                        <img src="${thumbUrl}" alt="${p.title}" loading="lazy" 
+                             onerror="this.src='https://picsum.photos/seed/hive/400/400'"
+                             class="w-full h-full object-cover grayscale brightness-50">
+                        <div class="project-overlay absolute inset-0 flex flex-col justify-end p-1 pointer-events-none">
+                            <h3 class="text-[7px] font-light lowercase truncate opacity-60">${p.title || 'Untitled'}</h3>
+                        </div>
+                    `;
+                    grid.appendChild(div);
+                });
+
+                status.innerText = "Synchronized";
+                status.className = "text-[10px] text-green-500 uppercase tracking-widest";
+
+            } catch (e) {
+                console.error("Sync failed:", e);
+            }
         }
 
         function openModal(videoUrl) {
@@ -194,6 +194,4 @@
         window.onload = initArchive;
     </script>
 </body>
-
 </html>
-
