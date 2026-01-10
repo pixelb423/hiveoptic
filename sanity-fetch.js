@@ -10,13 +10,15 @@ let currentView = 'grid';
 async function initArchive() {
     const status = document.getElementById('status-tag');
     
+    // FETCH QUERY: Added explicit expansion for thumbnail asset to get the URL directly if possible
     const QUERY = encodeURIComponent(`{
         "projects": *[_type == "project"] | order(order asc) {
             ...,
             "clientSlug": clientTag->slug.current,
             "clientTitle": clientTag->title,
             "categorySlugs": categoryTags[]->slug.current,
-            "categoryTitles": categoryTags[]->title
+            "categoryTitles": categoryTags[]->title,
+            "thumbnailUrl": thumbnail.asset->url
         },
         "clients": *[_type == "client"] | order(title asc),
         "categories": *[_type == "category"] | order(title asc)
@@ -91,23 +93,17 @@ function applyFilters() {
 
 function getYouTubeID(url) {
     if (!url) return null;
-    let videoId = "";
     
-    // Explicit check for Shorts first
+    // Handle YouTube Shorts
     if (url.includes('/shorts/')) {
         const parts = url.split('/shorts/');
-        if (parts[1]) {
-            videoId = parts[1].split(/[?#\/]/)[0];
-        }
-    } 
-    // Standard and mobile links
-    else {
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-        const match = url.match(regExp);
-        videoId = (match && match[2].length === 11) ? match[2] : "";
+        return parts[1] ? parts[1].split(/[?#\/]/)[0] : null;
     }
     
-    return videoId.trim().length === 11 ? videoId.trim() : null;
+    // Handle standard and other formats
+    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[7].length === 11) ? match[7] : null;
 }
 
 function renderGrid(data) {
@@ -120,30 +116,10 @@ function renderGrid(data) {
 
     data.forEach((p, index) => {
         const ytId = getYouTubeID(p.videoUrl);
-        let thumbUrl = "";
         
-        // 1. TRY SANITY IMAGE
-        if (p.thumbnail?.asset?._ref) {
-            const ref = p.thumbnail.asset._ref;
-            // Sanity ref format: image-ID-WIDTHxHEIGHT-EXT
-            const parts = ref.split('-');
-            if (parts.length >= 4) {
-                const id = parts[1];
-                const dimensions = parts[2];
-                const ext = parts[3];
-                thumbUrl = `https://cdn.sanity.io/images/${PROJECT_ID}/${DATASET}/${id}-${dimensions}.${ext}?w=800&q=80`;
-            }
-        } 
-        
-        // 2. FALLBACK TO YOUTUBE (Prioritize hqdefault for shorts)
-        if (!thumbUrl && ytId) {
-            thumbUrl = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
-        } 
-        
-        // 3. FINAL GENERIC FALLBACK (Black background)
-        if (!thumbUrl) {
-            thumbUrl = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-        }
+        // Use the thumbnailUrl from our expanded query, 
+        // fallback to YouTube HQ, then YouTube standard, then a black pixel
+        let primaryThumb = p.thumbnailUrl || (ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7");
 
         if (currentView === 'list') {
             const div = document.createElement('div');
@@ -168,18 +144,38 @@ function renderGrid(data) {
             div.className = "project-card relative aspect-square cursor-pointer bg-zinc-900 overflow-hidden";
             div.onclick = () => openModal(p.videoUrl);
             
-            // Onerror now cycles through YouTube resolutions properly
+            // Smarter onerror chain: 
+            // 1. If Sanity URL fails, try YouTube HQ
+            // 2. If YouTube HQ fails, try YouTube 0.jpg (standard)
+            // 3. Stop there to avoid infinite loops
             div.innerHTML = `
-                <img src="${thumbUrl}" 
+                <img src="${primaryThumb}" 
                      class="w-full h-full object-cover grayscale brightness-50 hover:grayscale-0 hover:brightness-100 transition-all duration-500"
-                     onerror="if(this.src.includes('sanity.io') && '${ytId}') { this.src='https://img.youtube.com/vi/${ytId}/hqdefault.jpg'; } else if (this.src.includes('hqdefault')) { this.src='https://img.youtube.com/vi/${ytId}/0.jpg'; }">
+                     onerror="handleImageError(this, '${ytId}')">
                 <div class="absolute inset-0 flex flex-col justify-end p-2 opacity-0 hover:opacity-100 bg-gradient-to-t from-black/80 to-transparent transition-opacity">
-                    <h3 class="text-[8px] uppercase tracking-tighter">${p.title}</h3>
+                    <h3 class="text-[8px] uppercase tracking-tighter text-white">${p.title}</h3>
                 </div>
             `;
             grid.appendChild(div);
         }
     });
+}
+
+// Global error handler for images to avoid inline string complexity
+function handleImageError(img, ytId) {
+    if (!ytId) {
+        img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+        return;
+    }
+
+    if (img.src.includes('sanity.io')) {
+        img.src = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+    } else if (img.src.includes('hqdefault')) {
+        img.src = `https://img.youtube.com/vi/${ytId}/0.jpg`;
+    } else {
+        img.onerror = null; // Prevent loops
+        img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+    }
 }
 
 window.onload = initArchive;
