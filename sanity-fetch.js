@@ -92,16 +92,22 @@ function applyFilters() {
 function getYouTubeID(url) {
     if (!url) return null;
     let videoId = "";
-    if (url.includes('shorts/')) {
-        videoId = url.split('shorts/')[1].split(/[?#]/)[0];
-    } else if (url.includes('v=')) {
-        videoId = url.split('v=')[1].split('&')[0];
-    } else if (url.includes('youtu.be/')) {
-        videoId = url.split('youtu.be/')[1].split(/[?#]/)[0];
-    } else if (url.includes('embed/')) {
-        videoId = url.split('embed/')[1].split(/[?#]/)[0];
+    
+    // Explicit check for Shorts first
+    if (url.includes('/shorts/')) {
+        const parts = url.split('/shorts/');
+        if (parts[1]) {
+            videoId = parts[1].split(/[?#\/]/)[0];
+        }
+    } 
+    // Standard and mobile links
+    else {
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        videoId = (match && match[2].length === 11) ? match[2] : "";
     }
-    return videoId.length === 11 ? videoId : null;
+    
+    return videoId.trim().length === 11 ? videoId.trim() : null;
 }
 
 function renderGrid(data) {
@@ -116,24 +122,27 @@ function renderGrid(data) {
         const ytId = getYouTubeID(p.videoUrl);
         let thumbUrl = "";
         
-        // BETTER SANITY IMAGE CONVERSION
+        // 1. TRY SANITY IMAGE
         if (p.thumbnail?.asset?._ref) {
             const ref = p.thumbnail.asset._ref;
-            // Matches image-ID-WIDTHxHEIGHT-EXTENSION
+            // Sanity ref format: image-ID-WIDTHxHEIGHT-EXT
             const parts = ref.split('-');
             if (parts.length >= 4) {
                 const id = parts[1];
                 const dimensions = parts[2];
-                const extension = parts[3];
-                thumbUrl = `https://cdn.sanity.io/images/${PROJECT_ID}/${DATASET}/${id}-${dimensions}.${extension}?w=800&q=80`;
+                const ext = parts[3];
+                thumbUrl = `https://cdn.sanity.io/images/${PROJECT_ID}/${DATASET}/${id}-${dimensions}.${ext}?w=800&q=80`;
             }
         } 
         
-        // If Sanity construction failed or was skipped
+        // 2. FALLBACK TO YOUTUBE (Prioritize hqdefault for shorts)
         if (!thumbUrl && ytId) {
             thumbUrl = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
-        } else if (!thumbUrl) {
-            thumbUrl = "https://picsum.photos/seed/" + (p._id || index) + "/600/600";
+        } 
+        
+        // 3. FINAL GENERIC FALLBACK (Black background)
+        if (!thumbUrl) {
+            thumbUrl = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
         }
 
         if (currentView === 'list') {
@@ -159,7 +168,7 @@ function renderGrid(data) {
             div.className = "project-card relative aspect-square cursor-pointer bg-zinc-900 overflow-hidden";
             div.onclick = () => openModal(p.videoUrl);
             
-            // Smarter onerror that iterates through YouTube resolutions
+            // Onerror now cycles through YouTube resolutions properly
             div.innerHTML = `
                 <img src="${thumbUrl}" 
                      class="w-full h-full object-cover grayscale brightness-50 hover:grayscale-0 hover:brightness-100 transition-all duration-500"
