@@ -137,7 +137,7 @@ function renderGrid(data) {
                 thumbUrl = `https://cdn.sanity.io/images/${PROJECT_ID}/${DATASET}/${fileName}?w=600&fit=crop`;
             } 
             // Priority 2: Automatic YouTube Thumbnail
-            else if (p.videoUrl && p.videoUrl.includes('youtube')) {
+            else if (p.videoUrl && (p.videoUrl.includes('youtube') || p.videoUrl.includes('youtu.be'))) {
                 const ytId = getYouTubeID(p.videoUrl);
                 if (ytId) thumbUrl = `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`;
             }
