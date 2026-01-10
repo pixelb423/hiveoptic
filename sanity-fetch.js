@@ -89,18 +89,22 @@ function applyFilters() {
     renderGrid(filtered);
 }
 
+/**
+ * Robust YouTube ID extractor for Standard, Shorts, and Mobile URLs
+ */
 function getYouTubeID(url) {
     if (!url) return null;
-    let id = null;
-    if (url.includes('/shorts/')) {
-        const parts = url.split('/shorts/');
-        id = parts[1].split(/[?#]/)[0];
-    } else {
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-        const match = url.match(regExp);
-        id = (match && match[2].length === 11) ? match[2] : null;
+    let videoId = "";
+    if (url.includes('shorts/')) {
+        videoId = url.split('shorts/')[1].split(/[?#]/)[0];
+    } else if (url.includes('v=')) {
+        videoId = url.split('v=')[1].split('&')[0];
+    } else if (url.includes('youtu.be/')) {
+        videoId = url.split('youtu.be/')[1].split(/[?#]/)[0];
+    } else if (url.includes('embed/')) {
+        videoId = url.split('embed/')[1].split(/[?#]/)[0];
     }
-    return id;
+    return videoId.length === 11 ? videoId : null;
 }
 
 function renderGrid(data) {
@@ -136,25 +140,27 @@ function renderGrid(data) {
         
         data.forEach(p => {
             const ytId = getYouTubeID(p.videoUrl);
-            let thumbUrl = "https://picsum.photos/seed/placeholder/400/400";
+            let thumbUrl = "";
             
+            // If there's a Sanity image, use it. Otherwise, try YouTube.
             if (p.thumbnail?.asset?._ref) {
                 const ref = p.thumbnail.asset._ref;
                 const fileName = ref.replace('image-', '').replace('-jpg', '.jpg').replace('-png', '.png').replace('-webp', '.webp');
                 thumbUrl = `https://cdn.sanity.io/images/${PROJECT_ID}/${DATASET}/${fileName}?w=600&fit=crop`;
             } else if (ytId) {
-                // Use hqdefault as it's the most reliable for both standard and shorts
                 thumbUrl = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+            } else {
+                thumbUrl = "https://picsum.photos/seed/placeholder/400/400";
             }
 
             const div = document.createElement('div');
-            div.className = "project-card relative aspect-square cursor-pointer bg-zinc-950 overflow-hidden";
+            div.className = "project-card relative aspect-square cursor-pointer bg-zinc-900 overflow-hidden";
             div.onclick = () => openModal(p.videoUrl);
             
             div.innerHTML = `
                 <img src="${thumbUrl}" 
                      class="w-full h-full object-cover grayscale brightness-50 hover:grayscale-0 hover:brightness-100 transition-all duration-500"
-                     onerror="this.onerror=null; this.src='https://img.youtube.com/vi/${ytId}/0.jpg';">
+                     onerror="if(this.src.indexOf('sanity.io') !== -1 && '${ytId}') { this.src='https://img.youtube.com/vi/${ytId}/hqdefault.jpg'; } else { this.src='https://img.youtube.com/vi/${ytId}/0.jpg'; }">
                 <div class="absolute inset-0 flex flex-col justify-end p-2 opacity-0 hover:opacity-100 bg-gradient-to-t from-black/80 to-transparent transition-opacity">
                     <h3 class="text-[8px] uppercase tracking-tighter">${p.title}</h3>
                 </div>
