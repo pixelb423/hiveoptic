@@ -89,18 +89,18 @@ function applyFilters() {
     renderGrid(filtered);
 }
 
-// IMPROVED: Handles standard YouTube, Shorts, and youtu.be links
 function getYouTubeID(url) {
     if (!url) return null;
-    
-    // Check for shorts pattern specifically
+    let id = null;
     if (url.includes('/shorts/')) {
-        return url.split('/shorts/')[1].split(/[?#]/)[0];
+        const parts = url.split('/shorts/');
+        id = parts[1].split(/[?#]/)[0];
+    } else {
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        id = (match && match[2].length === 11) ? match[2] : null;
     }
-    
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
+    return id;
 }
 
 function renderGrid(data) {
@@ -130,20 +130,20 @@ function renderGrid(data) {
             grid.appendChild(div);
         });
     } else {
-        const density = document.getElementById('grid-select').value;
+        const densitySelect = document.getElementById('grid-select');
+        const density = densitySelect ? densitySelect.value : 12;
         grid.style.gridTemplateColumns = `repeat(${density}, minmax(0, 1fr))`;
         
         data.forEach(p => {
-            let thumbUrl = "https://picsum.photos/seed/placeholder/400/400";
             const ytId = getYouTubeID(p.videoUrl);
+            let thumbUrl = "https://picsum.photos/seed/placeholder/400/400";
             
             if (p.thumbnail?.asset?._ref) {
                 const ref = p.thumbnail.asset._ref;
                 const fileName = ref.replace('image-', '').replace('-jpg', '.jpg').replace('-png', '.png').replace('-webp', '.webp');
                 thumbUrl = `https://cdn.sanity.io/images/${PROJECT_ID}/${DATASET}/${fileName}?w=600&fit=crop`;
-            } 
-            else if (ytId) {
-                // Shorts often don't have maxresdefault, so hqdefault is safer
+            } else if (ytId) {
+                // Use hqdefault as it's the most reliable for both standard and shorts
                 thumbUrl = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
             }
 
@@ -151,11 +151,10 @@ function renderGrid(data) {
             div.className = "project-card relative aspect-square cursor-pointer bg-zinc-950 overflow-hidden";
             div.onclick = () => openModal(p.videoUrl);
             
-            // Added secondary fallback in the img tag itself
             div.innerHTML = `
                 <img src="${thumbUrl}" 
-                     onerror="if(this.src.includes('hqdefault')) this.src='https://img.youtube.com/vi/${ytId}/0.jpg';" 
-                     class="w-full h-full object-cover grayscale brightness-50 hover:grayscale-0 hover:brightness-100 transition-all duration-500">
+                     class="w-full h-full object-cover grayscale brightness-50 hover:grayscale-0 hover:brightness-100 transition-all duration-500"
+                     onerror="this.onerror=null; this.src='https://img.youtube.com/vi/${ytId}/0.jpg';">
                 <div class="absolute inset-0 flex flex-col justify-end p-2 opacity-0 hover:opacity-100 bg-gradient-to-t from-black/80 to-transparent transition-opacity">
                     <h3 class="text-[8px] uppercase tracking-tighter">${p.title}</h3>
                 </div>
