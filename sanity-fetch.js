@@ -1,11 +1,18 @@
+console.log("🚀 SANITY-FETCH.JS IS LOADING!");
+
 const PROJECT_ID = "gi6q4yr8"; 
-const DATASET = "production"; // Change to "hiveoptic_dataset" if that's your actual dataset
+// IMPORTANT: Your sanity.cli.js uses "hiveoptic_dataset" but config uses "production"
+// Try BOTH - uncomment the one that works:
+const DATASET = "production";
+// const DATASET = "hiveoptic_dataset";
 
 let allProjects = [];
 let allClients = [];
 let allCategories = [];
 let activeFilters = { client: 'all', cat: 'all' };
 let currentView = 'grid';
+
+console.log("📊 Variables initialized, PROJECT_ID:", PROJECT_ID, "DATASET:", DATASET);
 
 async function initArchive() {
     const status = document.getElementById('status-tag');
