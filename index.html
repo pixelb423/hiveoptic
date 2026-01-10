@@ -75,7 +75,7 @@
         <div class="text-right flex items-center gap-8">
             <div class="hidden sm:block">
                 <p class="text-[9px] uppercase tracking-widest text-zinc-600 mb-0.5">vault status</p>
-                <span id="status-tag" class="text-[10px] text-zinc-400 uppercase tracking-widest">offline mode</span>
+                <span id="status-tag" class="text-[10px] text-zinc-400 uppercase tracking-widest transition-colors duration-500">offline mode</span>
             </div>
             <div>
                 <p class="text-[9px] uppercase tracking-widest text-zinc-600 mb-0.5">total entries</p>
@@ -105,7 +105,6 @@
     </div>
 
     <script>
-    // CONFIGURATION - Double check these!
     const PROJECT_ID = "gi6q4yr8"; 
     const DATASET = "production";
 
@@ -114,9 +113,8 @@
         const counter = document.getElementById('project-counter');
         const status = document.getElementById('status-tag');
         
-        console.log("Checking connection to Sanity...");
+        console.log("Attempting to connect to Sanity...");
 
-        // 1. Check if ID is set
         if (!PROJECT_ID || PROJECT_ID === "PASTE_YOUR_ID_HERE") {
             status.innerText = "ID MISSING";
             return;
@@ -128,18 +126,16 @@
         try {
             const response = await fetch(API_URL);
             
-            // 2. Check if the response is okay
             if (!response.ok) {
-                const error text = await response.text();
-                console.error("Sanity API Error:", errorText);
+                const error_text = await response.text(); 
+                console.error("Sanity API Error:", error_text);
                 status.innerText = "API ERROR";
                 return;
             }
 
             const { result } = await response.json();
-            console.log("Data received:", result);
+            console.log("Sanity data received:", result);
             
-            // 3. Check if we actually got data
             if (!result || result.length === 0) {
                 status.innerText = "NO DATA FOUND";
                 status.className = "text-[10px] text-yellow-500 uppercase tracking-widest";
@@ -154,8 +150,9 @@
                 let videoUrl = p.videoUrl || "";
                 let embedUrl = "";
 
+                // Handle Thumbnail Logic
                 if (p.thumbnail && p.thumbnail.asset) {
-                    thumbUrl = `https://cdn.sanity.io/images/${PROJECT_ID}/${DATASET}/${p.thumbnail.asset._ref.replace('image-', '').replace('-jpg', '.jpg').replace('-png', '.png')}?w=400&h=400&fit=crop`;
+                    thumbUrl = `https://cdn.sanity.io/images/${PROJECT_ID}/${DATASET}/${p.thumbnail.asset._ref.replace('image-', '').replace('-jpg', '.jpg').replace('-png', '.png').replace('-webp', '.webp')}?w=600&h=600&fit=crop`;
                 } else {
                     if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
                         const ytId = videoUrl.split('v=')[1]?.split('&')[0] || videoUrl.split('/').pop();
@@ -169,21 +166,21 @@
                 }
 
                 const div = document.createElement('div');
-                div.className = "project-card relative aspect-square cursor-pointer bg-zinc-950";
+                div.className = "project-card relative aspect-square cursor-pointer bg-zinc-950 overflow-hidden";
                 div.onclick = () => openModal(embedUrl || videoUrl);
                 
                 div.innerHTML = `
                     <img src="${thumbUrl}" alt="${p.title}" loading="lazy" 
-                         onerror="this.src='https://picsum.photos/seed/hive/400/400'"
+                         onerror="this.src='https://picsum.photos/seed/${p._id}/400/400'"
                          class="w-full h-full object-cover grayscale brightness-50">
-                    <div class="project-overlay absolute inset-0 flex flex-col justify-end p-1 pointer-events-none">
-                        <h3 class="text-[7px] font-light lowercase truncate opacity-60">${p.title || 'Untitled'}</h3>
+                    <div class="project-overlay absolute inset-0 flex flex-col justify-end p-1.5 pointer-events-none">
+                        <h3 class="text-[7px] font-light lowercase truncate opacity-80 text-white">${p.title || 'Untitled'}</h3>
                     </div>
                 `;
                 grid.appendChild(div);
             });
 
-            // If we get here, it worked!
+            // Connection successful
             status.innerText = "Synchronized";
             status.className = "text-[10px] text-green-500 uppercase tracking-widest";
 
@@ -194,10 +191,22 @@
     }
 
     function openModal(videoUrl) {
+        if (!videoUrl) return;
         const modal = document.getElementById('video-modal');
+        const container = document.getElementById('video-container');
+        
         modal.classList.remove('hidden');
         modal.classList.add('modal-active');
-        document.getElementById('video-container').innerHTML = `<iframe src="${videoUrl}?autoplay=1" class="w-full h-full" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+        
+        // Ensure autoplay and correct embed params
+        let finalUrl = videoUrl;
+        if (finalUrl.includes('?')) {
+            finalUrl += "&autoplay=1";
+        } else {
+            finalUrl += "?autoplay=1";
+        }
+
+        container.innerHTML = `<iframe src="${finalUrl}" class="w-full h-full" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
         document.body.style.overflow = 'hidden';
     }
 
@@ -214,6 +223,3 @@
 </script>
 </body>
 </html>
-
-
-
