@@ -33,27 +33,27 @@
             z-index: 1;
         }
 
-        .project-card:hover {
+        .-card:hover {
             transform: scale(1.3);
             z-index: 50;
             box-shadow: 0 10px 40px rgba(0,0,0,0.9);
         }
 
-        .project-card img {
+        .-card img {
             transition: filter 0.5s ease;
         }
 
-        .project-card:hover img {
+        .-card:hover img {
             filter: grayscale(0%) brightness(1.2);
         }
 
-        .project-overlay {
+        .-overlay {
             background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
             opacity: 0;
             transition: opacity 0.3s ease;
         }
 
-        .project-card:hover .project-overlay {
+        .-card:hover .-overlay {
             opacity: 1;
         }
 
@@ -83,7 +83,7 @@
             </div>
             <div>
                 <p class="text-[9px] uppercase tracking-widest text-zinc-600 mb-0.5">total entries</p>
-                <span id="project-counter" class="text-xl font-light">000</span>
+                <span id="-counter" class="text-xl font-light">000</span>
             </div>
         </div>
     </nav>
@@ -113,10 +113,10 @@
 
     <script>
         /** * CONFIGURATION 
-         * 1. Create a project at sanity.io
-         * 2. Replace PROJECT_ID with your actual ID
+         * 1. Create a  at sanity.io
+         * 2. Replace _ID with your actual ID
         */
-        const PROJECT_ID = ""; // <--- Put your Sanity Project ID here later
+        const PROJECT_ID = "o3okzjhb"; // <--- Put your Sanity Project ID here later
         const DATASET = "production";
         
         // Local backup data to show something beautiful immediately
@@ -194,4 +194,5 @@
         window.onload = initArchive;
     </script>
 </body>
+
 </html>
