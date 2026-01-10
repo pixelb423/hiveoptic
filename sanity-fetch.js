@@ -74,7 +74,6 @@ function setFilter(type, value) {
     activeFilters[type] = value;
     const btns = document.querySelectorAll(`.${type}-link`);
     btns.forEach(b => {
-        const text = b.innerText.toLowerCase();
         if (b.getAttribute('onclick').includes(`'${value}'`)) {
             b.classList.add(type === 'client' ? 'active-client' : 'active-cat');
         } else {
@@ -89,6 +88,13 @@ function applyFilters() {
     if (activeFilters.client !== 'all') filtered = filtered.filter(p => p.clientSlug === activeFilters.client);
     if (activeFilters.cat !== 'all') filtered = filtered.filter(p => p.categorySlugs && p.categorySlugs.includes(activeFilters.cat));
     renderGrid(filtered);
+}
+
+function getYouTubeID(url) {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
 }
 
 function renderGrid(data) {
@@ -123,17 +129,24 @@ function renderGrid(data) {
         
         data.forEach(p => {
             let thumbUrl = "https://picsum.photos/seed/placeholder/400/400";
+            
+            // Priority 1: Manual Sanity Thumbnail
             if (p.thumbnail?.asset?._ref) {
                 const ref = p.thumbnail.asset._ref;
-                const fileName = ref.replace('image-', '').replace('-jpg', '.jpg').replace('-png', '.png');
+                const fileName = ref.replace('image-', '').replace('-jpg', '.jpg').replace('-png', '.png').replace('-webp', '.webp');
                 thumbUrl = `https://cdn.sanity.io/images/${PROJECT_ID}/${DATASET}/${fileName}?w=600&fit=crop`;
+            } 
+            // Priority 2: Automatic YouTube Thumbnail
+            else if (p.videoUrl && p.videoUrl.includes('youtube')) {
+                const ytId = getYouTubeID(p.videoUrl);
+                if (ytId) thumbUrl = `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`;
             }
 
             const div = document.createElement('div');
             div.className = "project-card relative aspect-square cursor-pointer bg-zinc-950 overflow-hidden";
             div.onclick = () => openModal(p.videoUrl);
             div.innerHTML = `
-                <img src="${thumbUrl}" class="w-full h-full object-cover grayscale brightness-50 hover:grayscale-0 hover:brightness-100 transition-all duration-500">
+                <img src="${thumbUrl}" onerror="this.src='https://img.youtube.com/vi/${getYouTubeID(p.videoUrl)}/0.jpg'" class="w-full h-full object-cover grayscale brightness-50 hover:grayscale-0 hover:brightness-100 transition-all duration-500">
                 <div class="absolute inset-0 flex flex-col justify-end p-2 opacity-0 hover:opacity-100 bg-gradient-to-t from-black/80 to-transparent transition-opacity">
                     <h3 class="text-[8px] uppercase tracking-tighter">${p.title}</h3>
                 </div>
