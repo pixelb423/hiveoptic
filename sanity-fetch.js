@@ -10,7 +10,6 @@ let currentView = 'grid';
 async function initArchive() {
     const status = document.getElementById('status-tag');
     
-    // FETCH QUERY: Matches the new Schema with References
     const QUERY = encodeURIComponent(`{
         "projects": *[_type == "project"] | order(order asc) {
             ...,
@@ -90,8 +89,15 @@ function applyFilters() {
     renderGrid(filtered);
 }
 
+// IMPROVED: Handles standard YouTube, Shorts, and youtu.be links
 function getYouTubeID(url) {
     if (!url) return null;
+    
+    // Check for shorts pattern specifically
+    if (url.includes('/shorts/')) {
+        return url.split('/shorts/')[1].split(/[?#]/)[0];
+    }
+    
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
@@ -129,24 +135,27 @@ function renderGrid(data) {
         
         data.forEach(p => {
             let thumbUrl = "https://picsum.photos/seed/placeholder/400/400";
+            const ytId = getYouTubeID(p.videoUrl);
             
-            // Priority 1: Manual Sanity Thumbnail
             if (p.thumbnail?.asset?._ref) {
                 const ref = p.thumbnail.asset._ref;
                 const fileName = ref.replace('image-', '').replace('-jpg', '.jpg').replace('-png', '.png').replace('-webp', '.webp');
                 thumbUrl = `https://cdn.sanity.io/images/${PROJECT_ID}/${DATASET}/${fileName}?w=600&fit=crop`;
             } 
-            // Priority 2: Automatic YouTube Thumbnail
-            else if (p.videoUrl && (p.videoUrl.includes('youtube') || p.videoUrl.includes('youtu.be'))) {
-                const ytId = getYouTubeID(p.videoUrl);
-                if (ytId) thumbUrl = `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`;
+            else if (ytId) {
+                // Shorts often don't have maxresdefault, so hqdefault is safer
+                thumbUrl = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
             }
 
             const div = document.createElement('div');
             div.className = "project-card relative aspect-square cursor-pointer bg-zinc-950 overflow-hidden";
             div.onclick = () => openModal(p.videoUrl);
+            
+            // Added secondary fallback in the img tag itself
             div.innerHTML = `
-                <img src="${thumbUrl}" onerror="this.src='https://img.youtube.com/vi/${getYouTubeID(p.videoUrl)}/0.jpg'" class="w-full h-full object-cover grayscale brightness-50 hover:grayscale-0 hover:brightness-100 transition-all duration-500">
+                <img src="${thumbUrl}" 
+                     onerror="if(this.src.includes('hqdefault')) this.src='https://img.youtube.com/vi/${ytId}/0.jpg';" 
+                     class="w-full h-full object-cover grayscale brightness-50 hover:grayscale-0 hover:brightness-100 transition-all duration-500">
                 <div class="absolute inset-0 flex flex-col justify-end p-2 opacity-0 hover:opacity-100 bg-gradient-to-t from-black/80 to-transparent transition-opacity">
                     <h3 class="text-[8px] uppercase tracking-tighter">${p.title}</h3>
                 </div>
