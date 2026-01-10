@@ -10,7 +10,7 @@ let currentView = 'grid';
 async function initArchive() {
     const status = document.getElementById('status-tag');
     
-    // FETCH QUERY: Added explicit expansion for thumbnail asset to get the URL directly if possible
+    // FETCH QUERY: Optimized to ensure asset expansion is flat and accessible
     const QUERY = encodeURIComponent(`{
         "projects": *[_type == "project"] | order(order asc) {
             ...,
@@ -94,13 +94,13 @@ function applyFilters() {
 function getYouTubeID(url) {
     if (!url) return null;
     
-    // Handle YouTube Shorts
+    // Check for shorts specifically
     if (url.includes('/shorts/')) {
         const parts = url.split('/shorts/');
         return parts[1] ? parts[1].split(/[?#\/]/)[0] : null;
     }
     
-    // Handle standard and other formats
+    // Regular YouTube and Mobile links
     const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
     const match = url.match(regExp);
     return (match && match[7].length === 11) ? match[7] : null;
@@ -117,9 +117,14 @@ function renderGrid(data) {
     data.forEach((p, index) => {
         const ytId = getYouTubeID(p.videoUrl);
         
-        // Use the thumbnailUrl from our expanded query, 
-        // fallback to YouTube HQ, then YouTube standard, then a black pixel
-        let primaryThumb = p.thumbnailUrl || (ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7");
+        // Priority: Sanity Uploaded Image -> YouTube HQ -> YouTube SD -> Black Pixel
+        let primaryThumb = p.thumbnailUrl;
+        
+        if (!primaryThumb && ytId) {
+            primaryThumb = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+        } else if (!primaryThumb) {
+            primaryThumb = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+        }
 
         if (currentView === 'list') {
             const div = document.createElement('div');
@@ -144,10 +149,6 @@ function renderGrid(data) {
             div.className = "project-card relative aspect-square cursor-pointer bg-zinc-900 overflow-hidden";
             div.onclick = () => openModal(p.videoUrl);
             
-            // Smarter onerror chain: 
-            // 1. If Sanity URL fails, try YouTube HQ
-            // 2. If YouTube HQ fails, try YouTube 0.jpg (standard)
-            // 3. Stop there to avoid infinite loops
             div.innerHTML = `
                 <img src="${primaryThumb}" 
                      class="w-full h-full object-cover grayscale brightness-50 hover:grayscale-0 hover:brightness-100 transition-all duration-500"
@@ -161,19 +162,18 @@ function renderGrid(data) {
     });
 }
 
-// Global error handler for images to avoid inline string complexity
 function handleImageError(img, ytId) {
-    if (!ytId) {
-        img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-        return;
-    }
-
-    if (img.src.includes('sanity.io')) {
+    // If the primary image failed and it was from Sanity, try YouTube HQ
+    if (img.src.includes('sanity.io') && ytId) {
         img.src = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
-    } else if (img.src.includes('hqdefault')) {
+    } 
+    // If YouTube HQ failed, try the standard 0.jpg
+    else if (img.src.includes('hqdefault') && ytId) {
         img.src = `https://img.youtube.com/vi/${ytId}/0.jpg`;
-    } else {
-        img.onerror = null; // Prevent loops
+    } 
+    // Final fallback: black square
+    else {
+        img.onerror = null;
         img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
     }
 }
