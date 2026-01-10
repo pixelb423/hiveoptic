@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>bilal | hiveoptic archive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .tracking-ultra { letter-spacing: 0.6em; }
+        
+        ::-webkit-scrollbar { width: 2px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; }
+
+        /* The Sticky Header - Solid Black */
+        nav {
+            background-color: #000000;
+            border-bottom: 1px solid #111;
+        }
+
+        /* High-Density Grid Interactions */
+        .project-card {
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 1;
+        }
+
+        .project-card:hover {
+            transform: scale(1.3);
+            z-index: 50;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+        }
+
+        .project-card img {
+            transition: filter 0.5s ease;
+        }
+
+        .project-card:hover img {
+            filter: grayscale(0%) brightness(1.2);
+        }
+
+        .project-overlay {
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .project-card:hover .project-overlay {
+            opacity: 1;
+        }
+
+        /* Video Modal Blur */
+        .modal-active {
+            animation: modalFadeIn 0.4s ease forwards;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; backdrop-filter: blur(0px); }
+            to { opacity: 1; backdrop-filter: blur(25px); }
+        }
+    </style>
+</head>
+<body class="pt-24 md:pt-32 p-2 md:p-6">
+
+    <!-- FIXED SOLID HEADER -->
+    <nav class="fixed top-0 left-0 w-full z-[100] p-4 md:p-8 flex justify-between items-center">
+        <div>
+            <h1 class="text-base font-light lowercase tracking-ultra">bilal</h1>
+            <p class="text-[8px] uppercase tracking-widest text-zinc-600 mt-0.5">hiveoptic archive</p>
+        </div>
+        <div class="text-right flex items-center gap-8">
+            <div class="hidden sm:block">
+                <p class="text-[9px] uppercase tracking-widest text-zinc-600 mb-0.5">vault status</p>
+                <span id="status-tag" class="text-[10px] text-zinc-400 uppercase tracking-widest">offline mode</span>
+            </div>
+            <div>
+                <p class="text-[9px] uppercase tracking-widest text-zinc-600 mb-0.5">total entries</p>
+                <span id="project-counter" class="text-xl font-light">000</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- THE ARCHIVE GRID -->
+    <main class="w-full mx-auto px-1">
+        <div id="portfolio-grid" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-1">
+            <!-- Content injected via JavaScript -->
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="mt-32 mb-12 text-center border-t border-zinc-900 pt-12">
+        <a href="mailto:bilal@hiveoptic.com" class="text-[10px] lowercase tracking-widest text-zinc-500 hover:text-white transition-colors">bilal@hiveoptic.com</a>
+        <p class="text-[8px] uppercase tracking-[0.8em] text-zinc-800 mt-4">© hiveoptic</p>
+    </footer>
+
+    <!-- LIGHTBOX MODAL -->
+    <div id="video-modal" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-4 bg-black/90">
+        <button onclick="closeModal()" class="absolute top-6 right-6 text-white hover:text-zinc-400 transition-colors z-[210]">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+        <div class="w-full max-w-6xl aspect-video bg-black shadow-2xl relative">
+            <div id="video-container" class="w-full h-full"></div>
+        </div>
+    </div>
+
+    <script>
+        /** * CONFIGURATION 
+         * 1. Create a project at sanity.io
+         * 2. Replace PROJECT_ID with your actual ID
+        */
+        const PROJECT_ID = ""; // <--- Put your Sanity Project ID here later
+        const DATASET = "production";
+        
+        // Local backup data to show something beautiful immediately
+        const backupData = Array.from({ length: 60 }, (_, i) => ({
+            title: `Archive Entry ${i + 1}`,
+            thumb: `https://picsum.photos/seed/hive${i}/400/400`,
+            video: "https://www.youtube.com/embed/dQw4w9WgXcQ"
+        }));
+
+        async function initArchive() {
+            const grid = document.getElementById('portfolio-grid');
+            const counter = document.getElementById('project-counter');
+            const status = document.getElementById('status-tag');
+            
+            let projects = backupData;
+
+            // Try to fetch from Sanity if ID is provided
+            if (PROJECT_ID !== "") {
+                const QUERY = encodeURIComponent('*[_type == "project"] | order(order asc)');
+                const API_URL = `https://${PROJECT_ID}.api.sanity.io/v2021-10-21/data/query/${DATASET}?query=${QUERY}`;
+                
+                try {
+                    const response = await fetch(API_URL);
+                    const { result } = await response.json();
+                    if (result && result.length > 0) {
+                        projects = result.map(p => ({
+                            title: p.title,
+                            // Sanity image CDN helper
+                            thumb: `https://cdn.sanity.io/images/${PROJECT_ID}/${DATASET}/${p.thumbnail.asset._ref.replace('image-', '').replace('-jpg', '.jpg').replace('-png', '.png')}?w=400&h=400&fit=crop`,
+                            video: p.videoUrl.includes('youtube.com') ? p.videoUrl.replace("watch?v=", "embed/") : p.videoUrl
+                        }));
+                        status.innerText = "Synchronized";
+                        status.classList.replace('text-zinc-400', 'text-green-500');
+                    }
+                } catch (e) {
+                    console.warn("Using local backup. Sanity ID might be incorrect or CORS needs setup.");
+                }
+            }
+
+            grid.innerHTML = '';
+            counter.innerText = projects.length.toString().padStart(3, '0');
+
+            projects.forEach(project => {
+                const div = document.createElement('div');
+                div.className = "project-card relative aspect-square cursor-pointer bg-zinc-950";
+                div.onclick = () => openModal(project.video);
+                
+                div.innerHTML = `
+                    <img src="${project.thumb}" alt="${project.title}" loading="lazy" class="w-full h-full object-cover grayscale brightness-50">
+                    <div class="project-overlay absolute inset-0 flex flex-col justify-end p-1 pointer-events-none">
+                        <h3 class="text-[7px] font-light lowercase truncate opacity-60">${project.title}</h3>
+                    </div>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        function openModal(videoUrl) {
+            const modal = document.getElementById('video-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('modal-active');
+            document.getElementById('video-container').innerHTML = `<iframe src="${videoUrl}?autoplay=1" class="w-full h-full" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('video-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('modal-active');
+            document.getElementById('video-container').innerHTML = '';
+            document.body.style.overflow = 'auto';
+        }
+
+        window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+        window.onload = initArchive;
+    </script>
+</body>
+</html>
