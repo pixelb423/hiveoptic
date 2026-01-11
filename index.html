@@ -13,84 +13,159 @@
         .tag-btn.active-client { color: #fff; border-color: #fff; }
         .tag-btn.active-cat { color: #fbbf24; border-color: #fbbf24; }
         
-        /* Fixed Header Offset Fix */
-        main { padding-top: 220px; } 
+        main { padding-top: 240px; min-height: 100vh; } 
 
         .project-card { transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 1; }
-        .project-card:hover { transform: scale(1.1); z-index: 50; }
+        .project-card:hover { transform: scale(1.05); z-index: 50; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
         .custom-select {
-            appearance: none; background: #111; border: 1px solid #222; color: #666;
-            padding: 4px 24px 4px 8px; font-size: 9px; text-transform: uppercase;
+            appearance: none; background: #111; border: 1px solid #333; color: #a1a1aa;
+            padding: 6px 24px 6px 10px; font-size: 10px; text-transform: uppercase;
             cursor: pointer; outline: none; border-radius: 2px;
         }
 
-        .icon-btn { opacity: 0.3; transition: opacity 0.2s; cursor: pointer; color: #fff; border: none; background: none; }
+        .icon-btn { opacity: 0.4; transition: opacity 0.2s; cursor: pointer; color: #fff; border: none; background: none; }
         .icon-btn.active { opacity: 1; }
         .list-view-item { border-bottom: 1px solid #111; transition: background 0.2s; }
         .list-view-item:hover { background: #0a0a0a; }
         #video-modal { backdrop-filter: blur(15px); }
+        
+        /* Typography for Blog/About */
+        .prose h1 { font-size: 1.75rem; font-weight: 300; color: #fff; margin-bottom: 1.5rem; }
+        .prose p { font-size: 16px; line-height: 1.7; color: #d4d4d8; margin-bottom: 1.5rem; }
+        .nav-link { font-size: 10px; text-transform: uppercase; letter-spacing: 0.25em; color: #a1a1aa; transition: color 0.2s; cursor: pointer; }
+        .nav-link:hover, .nav-link.active { color: #fff; }
+
+        /* Prevent layout shift on page switch */
+        .page-controls-container { min-width: 400px; display: flex; justify-content: flex-end; align-items: center; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <nav class="fixed top-0 left-0 w-full z-[100] bg-black/95 border-b border-zinc-900 p-6 md:px-15">
-        <div class="flex justify-between items-start mb-8">
-            <div>
-                <h1 class="text-sm font-light lowercase tracking-ultra">bilal</h1>
-                <p class="text-[15px] uppercase tracking-[0.3em] text-zinc-600">Creative & commercial archive</p>
+    <nav class="fixed top-0 left-0 w-full z-[100] bg-black/95 border-b border-zinc-900 p-6 md:px-12">
+        <div class="flex justify-between items-start mb-10">
+            <!-- Left Side: Brand -->
+            <div class="cursor-pointer" onclick="navigateTo('archive')">
+                <h1 class="text-base font-light lowercase tracking-ultra">bilal</h1>
+                <p class="text-[10px] uppercase tracking-[0.3em] text-zinc-400 mt-1">multi-threaded archive</p>
             </div>
 
-            <div class="flex items-center gap-6 bg-zinc-900/30 p-2 rounded-sm border border-zinc-800/50">
-                <div class="flex gap-4 border-r border-zinc-800 pr-4">
-                    <button onclick="setView('grid')" id="btn-grid" class="icon-btn active" title="Grid View">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                    </button>
-                    <button onclick="setView('list')" id="btn-list" class="icon-btn" title="List View">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-                    </button>
+            <!-- Right Side: Controls & Navigation -->
+            <div class="flex items-center gap-10">
+                <!-- Archive Controls (Contextual) -->
+                <div id="view-controls" class="flex items-center gap-6 bg-zinc-900/30 p-2 rounded-sm border border-zinc-800/50">
+                    <!-- Project Counter -->
+                    <div class="text-left border-r border-zinc-800 pr-6">
+                        <span id="project-counter" class="text-2xl font-light">000</span>
+                        <p id="status-tag" class="text-[9px] uppercase tracking-widest text-green-400 italic">syncing</p>
+                    </div>
+
+                    <!-- Density Select -->
+                    <div id="density-control" class="flex items-center gap-3">
+                        <span class="text-[9px] uppercase text-zinc-400 tracking-tighter">Cols</span>
+                        <select id="grid-select" onchange="updateGridDensity(this.value)" class="custom-select">
+                            <option value="3">3</option><option value="5">5</option><option value="8">8</option>
+                            <option value="12" selected>12</option><option value="24">24</option>
+                        </select>
+                    </div>
+
+                    <!-- Grid/List Toggle -->
+                    <div class="flex gap-4 border-l border-zinc-800 pl-4">
+                        <button onclick="setView('grid')" id="btn-grid" class="icon-btn active" title="Grid View">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                        </button>
+                        <button onclick="setView('list')" id="btn-list" class="icon-btn" title="List View">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                        </button>
+                    </div>
                 </div>
 
-                <div id="density-control" class="flex items-center gap-3">
-                    <span class="text-[8px] uppercase text-zinc-600 tracking-tighter">Cols</span>
-                    <select id="grid-select" onchange="updateGridDensity(this.value)" class="custom-select">
-                        <option value="3">3</option>
-                        <option value="5">5</option>
-                        <option value="8">8</option>
-                        <option value="12" selected>12</option>
-                        <option value="24">24</option>
-                    </select>
-                </div>
-
-                <div class="text-right border-l border-zinc-800 pl-6">
-                    <span id="project-counter" class="text-xl font-light">000</span>
-                    <p id="status-tag" class="text-[8px] uppercase tracking-widest text-green-500 italic">syncing</p>
+                <!-- Site Navigation (Permanent Position) -->
+                <div class="flex gap-8 border-l border-zinc-800 pl-10">
+                    <span onclick="navigateTo('archive')" class="nav-link active" id="nav-archive">Archive</span>
+                    <span onclick="navigateTo('blog')" class="nav-link" id="nav-blog">Blog</span>
+                    <span onclick="navigateTo('about')" class="nav-link" id="nav-about">About</span>
                 </div>
             </div>
         </div>
         
-        <div class="space-y-4">
-            <div id="client-row" class="flex gap-4 text-[9px] uppercase tracking-widest text-zinc-500 items-center overflow-x-auto no-scrollbar">
-                <span class="text-zinc-800 pr-2">Client //</span>
+        <!-- Filter Rows (Contextual) -->
+        <div id="filter-section" class="space-y-5">
+            <div id="client-row" class="flex gap-5 text-[10px] uppercase tracking-widest text-zinc-400 items-center overflow-x-auto no-scrollbar">
+                <span class="text-zinc-600 pr-2">Client //</span>
             </div>
-            <div id="category-row" class="flex gap-4 text-[9px] uppercase tracking-widest text-zinc-600 items-center overflow-x-auto no-scrollbar">
-                <span class="text-zinc-800 pr-2">Genre //</span>
+            <div id="category-row" class="flex gap-5 text-[10px] uppercase tracking-widest text-zinc-400 items-center overflow-x-auto no-scrollbar">
+                <span class="text-zinc-600 pr-2">Genre //</span>
             </div>
         </div>
     </nav>
 
     <main>
-        <div id="portfolio-grid" class="grid gap-1"></div>
+        <!-- Archive Section -->
+        <div id="page-archive" class="page-container">
+            <div id="portfolio-grid" class="grid gap-1"></div>
+        </div>
+
+        <!-- Blog Section -->
+        <div id="page-blog" class="page-container hidden max-w-4xl mx-auto px-4">
+            <div id="blog-posts" class="space-y-32"></div>
+        </div>
+
+        <!-- About Section -->
+        <div id="page-about" class="page-container hidden max-w-4xl mx-auto px-4 py-16">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-20 items-start">
+                <div id="about-content" class="prose"></div>
+                <div id="about-sidebar" class="space-y-10 flex flex-col items-center md:items-end">
+                    <div id="qr-container" class="bg-white p-5 rounded-lg w-56 h-56 flex items-center justify-center shadow-xl">
+                        <p class="text-black text-[10px] uppercase font-bold">QR Loading</p>
+                    </div>
+                    <div id="contact-list" class="text-right space-y-6"></div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <div id="video-modal" class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-black/95 p-4">
-        <button onclick="closeModal()" class="absolute top-8 right-8 text-white hover:scale-110 transition-transform text-2xl">✕</button>
-        <div id="video-container" class="w-full max-w-5xl aspect-video bg-zinc-950 shadow-2xl"></div>
+        <button onclick="closeModal()" class="absolute top-8 right-8 text-white hover:scale-110 transition-transform text-3xl">✕</button>
+        <div id="video-container" class="w-full max-w-6xl aspect-video bg-zinc-950 shadow-2xl"></div>
     </div>
 
     <script src="sanity-fetch-v2.js"></script>
     <script>
+        let currentPage = 'archive';
+
+        function navigateTo(pageId) {
+            currentPage = pageId;
+            
+            // Toggle Page Visibility
+            document.querySelectorAll('.page-container').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`page-${pageId}`).classList.remove('hidden');
+            
+            // Update Active Link State
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            document.getElementById(`nav-${pageId}`).classList.add('active');
+
+            const controls = document.getElementById('view-controls');
+            const filters = document.getElementById('filter-section');
+            
+            if (pageId === 'archive') {
+                // Archive controls and filters appear
+                controls.style.visibility = 'visible';
+                controls.style.opacity = '1';
+                filters.style.display = 'block';
+                if (typeof applyFilters === 'function') applyFilters();
+            } else {
+                // Other pages: Archive tools are hidden, but layout remains stable
+                controls.style.visibility = 'hidden';
+                controls.style.opacity = '0';
+                filters.style.display = 'none';
+                
+                if (pageId === 'blog' && typeof fetchBlog === 'function') fetchBlog();
+                if (pageId === 'about' && typeof fetchAbout === 'function') fetchAbout();
+            }
+        }
+
         function setView(view) {
             currentView = view;
             const densityCtrl = document.getElementById('density-control');
@@ -108,12 +183,13 @@
                 btnGrid.classList.add('active');
                 btnList.classList.remove('active');
             }
-            applyFilters();
+            if (typeof applyFilters === 'function') applyFilters();
         }
 
         function updateGridDensity(val) {
             if(currentView !== 'grid') return;
-            document.getElementById('portfolio-grid').style.gridTemplateColumns = `repeat(${val}, minmax(0, 1fr))`;
+            const grid = document.getElementById('portfolio-grid');
+            if (grid) grid.style.gridTemplateColumns = `repeat(${val}, minmax(0, 1fr))`;
         }
 
         function openModal(url) {
