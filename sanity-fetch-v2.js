@@ -10,14 +10,16 @@ let activeFilters = { client: 'all', cat: 'all' };
 let currentView = 'grid'; 
 
 /**
- * ADVANCED PORTABLE TEXT RENDERER
- * Turns Sanity data (Text, Images, YouTube) into HTML
+ * PORTABLE TEXT RENDERER
+ * Handles Text, Images, and Video Embeds from Sanity
  */
 function renderPortableText(blocks) {
-    if (!blocks || !Array.isArray(blocks)) return "";
+    if (!blocks || !Array.isArray(blocks)) {
+        return "";
+    }
     
     return blocks.map(block => {
-        // 1. TEXT
+        // 1. Text Blocks
         if (block._type === 'block') {
             const text = block.children ? block.children.map(c => c.text).join('') : '';
             if (!text.trim()) return '';
@@ -27,7 +29,7 @@ function renderPortableText(blocks) {
             return `<p class="mb-6 text-zinc-400 text-lg leading-relaxed font-light">${text}</p>`;
         }
         
-        // 2. IMAGES
+        // 2. Images
         if (block._type === 'image' && block.asset) {
             const ref = block.asset._ref;
             if (!ref) return '';
@@ -37,7 +39,7 @@ function renderPortableText(blocks) {
             return `<img src="${url}" class="w-full grayscale brightness-75 mb-12 border border-zinc-900 shadow-2xl block">`;
         }
 
-        // 3. VIDEO EMBEDS
+        // 3. Video Embeds
         if (block._type === 'videoEmbed' && block.url) {
             let embedUrl = block.url;
             if (embedUrl.includes('watch?v=')) embedUrl = embedUrl.replace('watch?v=', 'embed/');
