@@ -8,21 +8,51 @@ let activeFilters = { client: 'all', cat: 'all' };
 let currentView = 'grid'; 
 
 /**
- * HELPER: Basic Block Content to HTML
+ * ADVANCED PORTABLE TEXT RENDERER
+ * Handles text, images, and video embeds in the correct order.
  */
-function blocksToHtml(blocks) {
-    if (!blocks) return "";
+function renderPortableText(blocks) {
+    if (!blocks || !Array.isArray(blocks)) return "";
+    
     return blocks.map(block => {
-        if (block._type !== 'block' || !block.children) return '';
-        const text = block.children.map(child => child.text).join('');
-        if (block.style === 'h1') return `<h1 class="text-2xl font-light mb-4">${text}</h1>`;
-        return `<p class="mb-4 text-zinc-400">${text}</p>`;
+        // 1. Handle Standard Text Blocks
+        if (block._type === 'block') {
+            const text = block.children ? block.children.map(child => child.text).join('') : '';
+            if (!text.trim()) return '';
+            if (block.style === 'h1') return `<h1 class="text-2xl font-light mb-6 text-white uppercase tracking-widest">${text}</h1>`;
+            if (block.style === 'h2') return `<h2 class="text-xl font-light mb-4 text-white uppercase tracking-wider">${text}</h2>`;
+            return `<p class="mb-6 text-zinc-400 text-lg leading-relaxed">${text}</p>`;
+        }
+        
+        // 2. Handle Images inside the Body
+        if (block._type === 'image' && block.asset) {
+            // Convert asset ref to URL
+            const ref = block.asset._ref;
+            if (!ref) return '';
+            const parts = ref.split('-');
+            const url = `https://cdn.sanity.io/images/${PROJECT_ID}/${DATASET}/${parts[1]}-${parts[2]}.${parts[3]}?w=1000&auto=format`;
+            return `<img src="${url}" class="w-full grayscale brightness-75 mb-10 border border-zinc-900">`;
+        }
+
+        // 3. Handle Video Embeds inside the Body
+        if (block._type === 'videoEmbed' && block.url) {
+            let embedUrl = block.url;
+            if (embedUrl.includes('watch?v=')) embedUrl = embedUrl.replace('watch?v=', 'embed/');
+            else if (embedUrl.includes('youtu.be/')) embedUrl = embedUrl.replace('youtu.be/', 'www.youtube.com/embed/');
+            
+            return `
+                <div class="aspect-video bg-zinc-900 border border-zinc-800 mb-10">
+                    <iframe src="${embedUrl}" class="w-full h-full" frameborder="0" allowfullscreen></iframe>
+                </div>
+            `;
+        }
+
+        return '';
     }).join('');
 }
 
 async function initArchive() {
     const status = document.getElementById('status-tag');
-    // We explicitly request a resized width for the sanityThumbUrl to save bandwidth
     const QUERY = encodeURIComponent(`{
         "projects": *[_type == "project"] | order(order asc) {
             ...,
@@ -42,7 +72,7 @@ async function initArchive() {
     try {
         const response = await fetch(API_URL);
         const data = await response.json();
-        if (!data.result) throw new Error("No result");
+        if (!data.result) throw new Error("No projects found.");
 
         allProjects = data.result.projects || [];
         allClients = data.result.clients || [];
@@ -56,7 +86,7 @@ async function initArchive() {
             status.style.color = "#22c55e"; 
         }
     } catch (e) {
-        console.error("Sync Error:", e);
+        console.error("Archive Sync Error:", e);
     }
 }
 
@@ -74,24 +104,29 @@ async function fetchBlog() {
         const res = await fetch(URL);
         const { result } = await res.json();
         
+        console.log("Blog Data:", result); // DEBUG LOG
+
+        if (!result || result.length === 0) {
+            container.innerHTML = `<p class="text-zinc-600 uppercase text-[10px] tracking-widest">Journal is currently empty. Ensure posts are 'Published' in Sanity.</p>`;
+            return;
+        }
+
         container.innerHTML = result.map(post => `
             <article class="group border-b border-zinc-900 pb-24 last:border-0">
                 <header class="mb-8">
-                    <span class="text-[10px] text-zinc-500 uppercase tracking-widest">${new Date(post.publishedAt).toLocaleDateString()}</span>
+                    <span class="text-[10px] text-zinc-500 uppercase tracking-widest">${post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : 'Recent'}</span>
                     <h1 class="text-3xl font-light uppercase tracking-widest group-hover:text-amber-500 transition-colors mt-4">${post.title}</h1>
                 </header>
                 ${post.imageUrl ? `<img src="${post.imageUrl}" class="w-full grayscale brightness-75 mb-10 border border-zinc-900">` : ''}
-                <div class="prose max-w-2xl">${blocksToHtml(post.body)}</div>
-                <div class="mt-12 space-y-6">
-                    ${(post.body || []).filter(b => b._type === 'videoEmbed').map(vid => `
-                        <div class="aspect-video bg-zinc-900 border border-zinc-800">
-                             <iframe src="${vid.url.replace('watch?v=', 'embed/')}" class="w-full h-full" frameborder="0" allowfullscreen></iframe>
-                        </div>
-                    `).join('')}
+                <div class="prose max-w-2xl">
+                    ${renderPortableText(post.body)}
                 </div>
             </article>
         `).join('');
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        console.error("Blog Fetch Error:", e);
+        container.innerHTML = `<p class="text-red-500 text-[10px] uppercase">Failed to load blog.</p>`;
+    }
 }
 
 async function fetchAbout() {
@@ -104,26 +139,39 @@ async function fetchAbout() {
     try {
         const res = await fetch(URL);
         const { result } = await res.json();
-        if (!result) return;
+        
+        console.log("About Data:", result); // DEBUG LOG
+        
+        if (!result) {
+            document.getElementById('about-content').innerHTML = `<p class="text-zinc-600 uppercase text-[10px] tracking-widest">Bio not found. Create and 'Publish' an About Page document in Sanity.</p>`;
+            return;
+        }
 
         document.getElementById('about-content').innerHTML = `
             <h1 class="text-3xl font-light uppercase tracking-widest mb-12">${result.title || 'About'}</h1>
-            <div class="prose">${blocksToHtml(result.bio)}</div>
+            <div class="prose">${renderPortableText(result.bio)}</div>
         `;
 
         if (result.qrUrl) {
             document.getElementById('qr-container').innerHTML = `<img src="${result.qrUrl}" class="w-full h-full object-contain">`;
+        } else {
+            document.getElementById('qr-container').innerHTML = `<p class="text-black text-[8px] uppercase font-bold text-center">No QR Code<br>Uploaded</p>`;
         }
 
         document.getElementById('contact-list').innerHTML = (result.contactInfo || []).map(c => `
-            <div class="mb-4">
-                <span class="text-[9px] text-zinc-500 uppercase block tracking-tighter mb-1">${c.label}</span>
-                <span class="text-xs text-zinc-200 font-mono tracking-wide">${c.value}</span>
+            <div class="mb-6">
+                <span class="text-[10px] text-zinc-500 uppercase block tracking-tighter mb-1">${c.label}</span>
+                <span class="text-sm text-zinc-200 font-mono tracking-wide">${c.value}</span>
             </div>
         `).join('');
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        console.error("About Fetch Error:", e); 
+    }
 }
 
+/** * REMAINING HELPERS (Counter, Filters, Grid)
+ * Optimized for performance
+ */
 function updateCounter(count) {
     const el = document.getElementById('project-counter');
     if (el) el.innerText = count.toString().padStart(3, '0');
@@ -140,14 +188,12 @@ function buildSanityUrl(ref) {
     if (!ref) return null;
     const parts = ref.split('-');
     if (parts.length < 4) return null;
-    // Optimized resizing for the grid
     return `https://cdn.sanity.io/images/${PROJECT_ID}/${DATASET}/${parts[1]}-${parts[2]}.${parts[3]}?w=600&auto=format`;
 }
 
 window.handleImageError = function(img, ytId, videoUrl) {
     if (!ytId) ytId = getYouTubeID(videoUrl);
     if (!ytId) return;
-    // Using mqdefault (Medium Quality) for grid thumbnails to save performance
     img.src = `https://img.youtube.com/vi/${ytId}/mqdefault.jpg`;
 }
 
@@ -162,7 +208,6 @@ function renderGrid(data) {
         grid.style.gridTemplateColumns = `repeat(${density}, minmax(0, 1fr))`;
         data.forEach((p) => {
             const ytId = getYouTubeID(p.videoUrl);
-            // mqdefault is used for initial load if sanity thumb is missing
             let thumbSrc = p.sanityThumbUrl || buildSanityUrl(p.sanityAssetRef) || (ytId ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg` : null);
             
             const div = document.createElement('div');
