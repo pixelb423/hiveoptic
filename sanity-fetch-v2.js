@@ -1,4 +1,4 @@
-console.log("🚀 SANITY SCRIPT STARTED");
+console.log("🚀 SANITY SCRIPT INITIALIZING...");
 
 const PROJECT_ID = "gi6q4yr8"; 
 const DATASET = "production";
@@ -10,17 +10,14 @@ let activeFilters = { client: 'all', cat: 'all' };
 let currentView = 'grid'; 
 
 /**
- * PORTABLE TEXT RENDERER
- * Handles Text, Images, and Video Embeds from Sanity
+ * ADVANCED PORTABLE TEXT RENDERER
+ * Turns Sanity data (Text, Images, YouTube) into HTML
  */
 function renderPortableText(blocks) {
-    if (!blocks || !Array.isArray(blocks)) {
-        console.warn("renderPortableText received invalid blocks:", blocks);
-        return "";
-    }
+    if (!blocks || !Array.isArray(blocks)) return "";
     
     return blocks.map(block => {
-        // 1. Text Blocks
+        // 1. TEXT
         if (block._type === 'block') {
             const text = block.children ? block.children.map(c => c.text).join('') : '';
             if (!text.trim()) return '';
@@ -30,17 +27,17 @@ function renderPortableText(blocks) {
             return `<p class="mb-6 text-zinc-400 text-lg leading-relaxed font-light">${text}</p>`;
         }
         
-        // 2. Images
+        // 2. IMAGES
         if (block._type === 'image' && block.asset) {
             const ref = block.asset._ref;
             if (!ref) return '';
             const parts = ref.split('-'); // image-id-dimensions-ext
-            if (parts.length < 4) return '';
+            if (parts.length < 4) return ''; 
             const url = `https://cdn.sanity.io/images/${PROJECT_ID}/${DATASET}/${parts[1]}-${parts[2]}.${parts[3]}?w=1000&auto=format`;
             return `<img src="${url}" class="w-full grayscale brightness-75 mb-12 border border-zinc-900 shadow-2xl block">`;
         }
 
-        // 3. Video Embeds
+        // 3. VIDEO EMBEDS
         if (block._type === 'videoEmbed' && block.url) {
             let embedUrl = block.url;
             if (embedUrl.includes('watch?v=')) embedUrl = embedUrl.replace('watch?v=', 'embed/');
@@ -57,9 +54,9 @@ function renderPortableText(blocks) {
 }
 
 /**
- * INITIAL ARCHIVE LOAD
+ * FETCH: ARCHIVE (Projects)
  */
-async function initArchive() {
+window.initArchive = async function() {
     console.log("📥 initArchive: Fetching projects...");
     const status = document.getElementById('status-tag');
     
@@ -81,9 +78,7 @@ async function initArchive() {
         const response = await fetch(`https://${PROJECT_ID}.api.sanity.io/v2021-10-21/data/query/${DATASET}?query=${QUERY}`);
         const data = await response.json();
         
-        if (!data.result) throw new Error("Sanity Result is empty (Check CORS or Published state)");
-
-        console.log(`✅ initArchive: Loaded ${data.result.projects.length} projects`);
+        if (!data.result) throw new Error("Empty Result");
 
         allProjects = data.result.projects || [];
         allClients = data.result.clients || [];
@@ -97,19 +92,17 @@ async function initArchive() {
             status.style.color = "#22c55e"; 
         }
     } catch (e) {
-        console.error("❌ initArchive Error:", e);
-        if (status) status.innerText = "Sync Error";
+        console.error("❌ Archive Error:", e);
+        if (status) status.innerText = "Connection Failed";
     }
 }
 
 /**
- * FETCH BLOG POSTS
+ * FETCH: BLOG
  */
-async function fetchBlog() {
+window.fetchBlog = async function() {
     console.log("📥 fetchBlog: Starting...");
     const container = document.getElementById('blog-posts');
-    if (!container) return console.error("Element #blog-posts not found!");
-
     container.innerHTML = `<p class="text-[10px] uppercase tracking-widest text-zinc-500 animate-pulse">Loading Journal...</p>`;
     
     const QUERY = encodeURIComponent(`*[_type == "post"] | order(publishedAt desc) {
@@ -120,45 +113,34 @@ async function fetchBlog() {
     try {
         const res = await fetch(`https://${PROJECT_ID}.api.sanity.io/v2021-10-21/data/query/${DATASET}?query=${QUERY}`);
         const { result } = await res.json();
-        
-        console.log("✅ fetchBlog: Data received:", result);
 
         if (!result || result.length === 0) {
-            container.innerHTML = `
-                <div class="p-10 border border-dashed border-zinc-900 text-center">
-                    <p class="text-zinc-600 uppercase text-[10px] tracking-widest mb-2 font-bold">Journal is Empty</p>
-                    <p class="text-zinc-700 text-[9px] uppercase">Please publish a 'post' document in Sanity Studio.</p>
-                </div>`;
+            container.innerHTML = `<div class="p-10 border border-dashed border-zinc-900 text-center"><p class="text-zinc-500 text-xs">NO POSTS FOUND</p><p class="text-zinc-700 text-[10px] uppercase mt-2">Publish a post in Sanity Studio</p></div>`;
             return;
         }
 
         container.innerHTML = result.map(post => `
             <article class="group border-b border-zinc-900 pb-24 mb-24 last:border-0 last:mb-0">
                 <header class="mb-12">
-                    <span class="text-[10px] text-zinc-600 uppercase tracking-widest">
-                        ${post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : 'Draft / Recent'}
-                    </span>
-                    <h1 class="text-3xl font-light uppercase tracking-widest group-hover:text-amber-500 transition-colors mt-4 leading-tight">
-                        ${post.title}
-                    </h1>
+                    <span class="text-[10px] text-zinc-600 uppercase tracking-widest">${post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : 'Recent'}</span>
+                    <h1 class="text-3xl font-light uppercase tracking-widest group-hover:text-amber-500 transition-colors mt-4 leading-tight">${post.title}</h1>
                 </header>
-                ${post.imageUrl ? `<img src="${post.imageUrl}" class="w-full grayscale brightness-75 mb-14 border border-zinc-900 shadow-2xl transition-all duration-700 group-hover:grayscale-0 group-hover:brightness-100">` : ''}
+                ${post.imageUrl ? `<img src="${post.imageUrl}" class="w-full grayscale brightness-75 mb-14 border border-zinc-900 shadow-2xl">` : ''}
                 <div class="prose max-w-2xl">
                     ${renderPortableText(post.body)}
                 </div>
             </article>
         `).join('');
-        
-    } catch (e) { 
-        console.error("❌ fetchBlog Error:", e);
-        container.innerHTML = `<p class="text-red-500 text-[10px] uppercase tracking-widest">Error loading posts. Check Console.</p>`;
+    } catch (e) {
+        console.error("❌ Blog Error:", e);
+        container.innerHTML = `<p class="text-red-500 text-xs">Error loading blog. Check Console for CORS issues.</p>`;
     }
 }
 
 /**
- * FETCH ABOUT PAGE
+ * FETCH: ABOUT
  */
-async function fetchAbout() {
+window.fetchAbout = async function() {
     console.log("📥 fetchAbout: Starting...");
     const QUERY = encodeURIComponent(`*[_type == "aboutPage"][0] {
         ...,
@@ -169,13 +151,8 @@ async function fetchAbout() {
         const res = await fetch(`https://${PROJECT_ID}.api.sanity.io/v2021-10-21/data/query/${DATASET}?query=${QUERY}`);
         const { result } = await res.json();
         
-        console.log("✅ fetchAbout: Data received:", result);
-        
         if (!result) {
-            document.getElementById('about-content').innerHTML = `
-                <h1 class="text-3xl font-light uppercase tracking-widest mb-12">Bio // 404</h1>
-                <p class="text-zinc-600 uppercase text-[10px] tracking-widest">No published 'About Page' found.</p>
-            `;
+            document.getElementById('about-content').innerHTML = `<h1 class="text-3xl font-light uppercase tracking-widest mb-12">Bio // 404</h1><p class="text-zinc-600 text-xs">About page not found. Publish one in Sanity Studio.</p>`;
             return;
         }
 
@@ -197,21 +174,16 @@ async function fetchAbout() {
                 <span class="text-sm text-zinc-200 font-mono tracking-wide">${c.value || '—'}</span>
             </div>
         `).join('');
-        
-    } catch (e) { 
-        console.error("❌ fetchAbout Error:", e);
-        document.getElementById('about-content').innerHTML = `<p class="text-red-500">Error loading Bio. Check Console.</p>`;
-    }
+    } catch (e) { console.error("❌ About Error:", e); }
 }
 
-/** * UI HELPERS 
- */
+/** * UI HELPERS */
 function updateCounter(count) {
     const el = document.getElementById('project-counter');
     if (el) el.innerText = count.toString().padStart(3, '0');
 }
 
-function getYouTubeID(url) {
+window.getYouTubeID = function(url) {
     if (!url) return null;
     const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
     const match = url.match(regExp);
@@ -226,7 +198,7 @@ function buildSanityUrl(ref) {
 }
 
 window.handleImageError = function(img, ytId, videoUrl) {
-    if (!ytId) ytId = getYouTubeID(videoUrl);
+    if (!ytId) ytId = window.getYouTubeID(videoUrl);
     if (!ytId) return;
     img.src = `https://img.youtube.com/vi/${ytId}/mqdefault.jpg`;
 }
@@ -242,20 +214,15 @@ function renderGrid(data) {
         grid.style.gridTemplateColumns = `repeat(${density}, minmax(0, 1fr))`;
         
         data.forEach((p) => {
-            const ytId = getYouTubeID(p.videoUrl);
+            const ytId = window.getYouTubeID(p.videoUrl);
             let thumbSrc = p.sanityThumbUrl || buildSanityUrl(p.sanityAssetRef) || (ytId ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg` : null);
             
             const div = document.createElement('div');
             div.className = "project-card relative aspect-square cursor-pointer bg-zinc-950 overflow-hidden group";
             div.onclick = () => openModal(p.videoUrl);
-            
-            // Escape quotes for safe HTML injection
             const escapedVideoUrl = (p.videoUrl || '').replace(/'/g, "\\'");
-            
             div.innerHTML = `
-                <img src="${thumbSrc || ''}" 
-                     loading="lazy"
-                     decoding="async"
+                <img src="${thumbSrc || ''}" loading="lazy" decoding="async"
                      class="w-full h-full object-cover grayscale brightness-50 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-500"
                      onerror="window.handleImageError(this, '${ytId || ''}', '${escapedVideoUrl}')">
                 <div class="absolute inset-0 flex flex-col justify-end p-2 opacity-0 group-hover:opacity-100 bg-gradient-to-t from-black/80 to-transparent transition-opacity">
@@ -264,10 +231,8 @@ function renderGrid(data) {
             grid.appendChild(div);
         });
     } else {
-        // LIST VIEW
         grid.className = "flex flex-col border-t border-zinc-900";
         grid.style.gridTemplateColumns = "none";
-        
         data.forEach((p, i) => {
             const div = document.createElement('div');
             div.className = "list-view-item flex justify-between items-center py-6 px-2 cursor-pointer group";
@@ -301,7 +266,7 @@ function renderFilters() {
     }
 }
 
-function setFilter(type, value) {
+window.setFilter = function(type, value) {
     activeFilters[type] = value;
     document.querySelectorAll(`.${type}-link`).forEach(b => {
         b.classList.toggle(type === 'client' ? 'active-client' : 'active-cat', b.getAttribute('onclick').includes(`'${value}'`));
@@ -317,9 +282,9 @@ function applyFilters() {
     renderGrid(filtered);
 }
 
-// Ensure init runs
+// Start Archive on Load
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initArchive);
+    document.addEventListener('DOMContentLoaded', window.initArchive);
 } else {
-    initArchive();
+    window.initArchive();
 }
