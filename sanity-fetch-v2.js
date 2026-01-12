@@ -9,6 +9,7 @@ let vaultProjects = [];
 let allClients = [];
 let allCategories = [];
 
+// Filter State
 let activeFilters = { client: 'all', cat: 'all' };
 
 // Pagination State
@@ -19,17 +20,20 @@ let endOfList = false;
 
 // --- INITIALIZATION ---
 window.addEventListener('DOMContentLoaded', () => {
+    // Ensure window globals exist if index.html hasn't run yet
+    if (typeof window.currentView === 'undefined') window.currentView = 'grid';
+    if (typeof window.currentPage === 'undefined') window.currentPage = 'archive';
+    
     initArchive();
 });
 
-// --- HELPER: ROBUST THUMBNAIL GENERATOR ---
+// --- HELPER: THUMBNAIL GENERATOR ---
 function getThumbnail(sanityUrl, videoUrl) {
-    // 1. If Sanity has a manual image, use it
-    if (sanityUrl) return sanityUrl;
+    if (sanityUrl) return sanityUrl; // Manual overrides first
 
-    // 2. If no image, try to generate from YouTube
     if (videoUrl) {
         let videoId = null;
+        // YouTube Shorts & Standard
         if (videoUrl.includes('youtube.com/shorts/')) {
             videoId = videoUrl.split('shorts/')[1]?.split('?')[0];
         } else if (videoUrl.includes('youtube.com/watch')) {
@@ -42,16 +46,13 @@ function getThumbnail(sanityUrl, videoUrl) {
             return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
         }
     }
-
-    // 3. Fallback
     return null;
 }
 
 /**
- * FETCH: ARCHIVE (Infinite Scroll + Server Side Filtering)
+ * FETCH: ARCHIVE
  */
 window.initArchive = async function() {
-    console.log("📥 initArchive: Resetting and fetching...");
     await fetchFilters(); 
     resetAndLoadProjects();
 }
@@ -88,10 +89,19 @@ function renderFilterButtons() {
 
 window.setFilter = function(type, value) {
     activeFilters[type] = value;
+    
+    // Update visual state of buttons
     document.querySelectorAll(`.${type}-link`).forEach(b => {
+        // Check if the button's onclick string contains the value we just selected
         const isMatch = b.getAttribute('onclick').includes(`'${value}'`);
         b.classList.toggle(type === 'client' ? 'active-client' : 'active-cat', isMatch);
     });
+    
+    resetAndLoadProjects();
+}
+
+// Exposed for index.html to call if needed
+window.applyFilters = function() {
     resetAndLoadProjects();
 }
 
@@ -99,7 +109,8 @@ function resetAndLoadProjects() {
     projectCursor = 0;
     allProjects = []; 
     endOfList = false;
-    document.getElementById('portfolio-grid').innerHTML = ''; 
+    const grid = document.getElementById('portfolio-grid');
+    if(grid) grid.innerHTML = ''; 
     window.loadMoreProjects();
 }
 
@@ -137,14 +148,27 @@ window.loadMoreProjects = async function() {
         renderGrid(newProjects);
 
         if(status) status.innerText = endOfList ? "End of List" : "Syncing";
-        document.getElementById('project-counter').innerText = allProjects.length.toString().padStart(3, '0');
+        
+        const counter = document.getElementById('project-counter');
+        if(counter) counter.innerText = allProjects.length.toString().padStart(3, '0');
+        
     } catch (e) { console.error(e); } finally { isLoading = false; }
 }
 
 window.renderGrid = function(projectsToRender = []) {
     const grid = document.getElementById('portfolio-grid');
     if(!grid) return;
-    if (projectsToRender.length === 0 && allProjects.length > 0 && grid.innerHTML === '') projectsToRender = allProjects;
+    
+    // If called without arguments (e.g., switching views), re-render all current projects
+    if (projectsToRender.length === 0 && allProjects.length > 0) projectsToRender = allProjects;
+    if (projectsToRender.length === 0 && allProjects.length === 0) return; // Nothing to render
+
+    // Clear grid if we are re-rendering everything (like view switch)
+    // NOTE: For infinite scroll (appending), we generally don't clear, 
+    // but specific logic is needed to distinguish append vs switch. 
+    // Here we strictly append ONLY if arguments were passed. 
+    // If no arguments (view switch), we clear first.
+    if (arguments.length === 0) grid.innerHTML = '';
 
     const html = projectsToRender.map(p => {
         const thumb = getThumbnail(p.sanityThumbUrl, p.videoUrl);
@@ -152,6 +176,7 @@ window.renderGrid = function(projectsToRender = []) {
             ? `<img src="${thumb}" class="w-full h-full object-cover" loading="lazy">`
             : `<div class="w-full h-full bg-zinc-900 flex items-center justify-center text-zinc-700 text-xs">NO IMG</div>`;
 
+        // USE GLOBAL WINDOW VARIABLE HERE
         if (window.currentView === 'list') {
              return `
                 <div class="list-view-item p-4 flex justify-between items-center cursor-pointer group" onclick="openModal('${p.videoUrl}')">
@@ -172,18 +197,18 @@ window.renderGrid = function(projectsToRender = []) {
                 </div>`;
         }
     }).join('');
+    
     grid.insertAdjacentHTML('beforeend', html);
 }
 
 
 /**
- * FETCH: VAULT (Locked Content)
+ * FETCH: VAULT
  */
 window.fetchVault = async function() {
     const grid = document.getElementById('vault-grid');
-    grid.innerHTML = '<p class="text-center text-zinc-600 text-[10px] tracking-widest col-span-full">DECRYPTING...</p>';
+    if(grid) grid.innerHTML = '<p class="text-center text-zinc-600 text-[10px] tracking-widest col-span-full">DECRYPTING...</p>';
 
-    // Query for the new 'vaultItem' type
     const QUERY = encodeURIComponent(`*[_type == "vaultItem"] | order(publishedAt desc) {
         title,
         videoUrl,
@@ -225,9 +250,9 @@ window.renderVaultGrid = function() {
     }).join('');
 }
 
-// ... (Fetch Blog and Fetch About functions remain the same as previous)
 window.fetchBlog = async function() {
     const container = document.getElementById('blog-posts');
+    if(!container) return;
     container.innerHTML = '<p class="text-zinc-500 text-center mt-20">Loading thoughts...</p>';
     const QUERY = encodeURIComponent(`*[_type == "post"] | order(publishedAt desc) { title, "slug": slug.current, publishedAt, "mainImageUrl": mainImage.asset->url, body }`);
     try {
@@ -251,9 +276,9 @@ window.fetchAbout = async function() {
         const data = await res.json();
         const doc = data.result;
         if(!doc) return;
-        contentDiv.innerHTML = `<div class="prose prose-invert prose-lg font-light text-zinc-300">${renderPortableText(doc.bio)}</div>`;
-        if(doc.qrUrl) qrDiv.innerHTML = `<img src="${doc.qrUrl}" class="w-full h-full object-contain mix-blend-multiply">`;
-        if(doc.contactInfo) contactDiv.innerHTML = doc.contactInfo.map(c => `<div><span class="block text-[9px] uppercase tracking-widest text-zinc-500">${c.label}</span><span class="text-lg font-light text-white">${c.value}</span></div>`).join('');
+        if(contentDiv) contentDiv.innerHTML = `<div class="prose prose-invert prose-lg font-light text-zinc-300">${renderPortableText(doc.bio)}</div>`;
+        if(qrDiv && doc.qrUrl) qrDiv.innerHTML = `<img src="${doc.qrUrl}" class="w-full h-full object-contain mix-blend-multiply">`;
+        if(contactDiv && doc.contactInfo) contactDiv.innerHTML = doc.contactInfo.map(c => `<div><span class="block text-[9px] uppercase tracking-widest text-zinc-500">${c.label}</span><span class="text-lg font-light text-white">${c.value}</span></div>`).join('');
     } catch(e) { console.error(e); }
 }
 
