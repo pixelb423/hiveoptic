@@ -39,15 +39,12 @@
 
     <nav class="fixed top-0 left-0 w-full z-[100] bg-black/95 border-b border-zinc-900 p-6 md:px-12">
         <div class="flex justify-between items-start mb-10">
-            <!-- Left Side: Brand -->
             <div class="cursor-pointer" onclick="navigateTo('archive')">
                 <h1 class="text-base font-light lowercase tracking-ultra">bilal</h1>
                 <p class="text-[10px] uppercase tracking-[0.3em] text-zinc-400 mt-1">multi-threaded archive</p>
             </div>
 
-            <!-- Right Side: Controls & Navigation -->
             <div class="flex items-center gap-10">
-                <!-- Archive Controls (Hidden on other pages) -->
                 <div id="view-controls" class="flex items-center gap-6 bg-zinc-900/30 p-2 rounded-sm border border-zinc-800/50">
                     <div class="text-left border-r border-zinc-800 pr-6">
                         <span id="project-counter" class="text-2xl font-light">000</span>
@@ -72,7 +69,6 @@
                     </div>
                 </div>
 
-                <!-- Main Navigation -->
                 <div class="flex gap-8 border-l border-zinc-800 pl-10">
                     <span onclick="navigateTo('archive')" class="nav-link active" id="nav-archive">Archive</span>
                     <span onclick="navigateTo('blog')" class="nav-link" id="nav-blog">Blog</span>
@@ -81,7 +77,6 @@
             </div>
         </div>
         
-        <!-- Filter Rows -->
         <div id="filter-section" class="space-y-5">
             <div id="client-row" class="flex gap-5 text-[10px] uppercase tracking-widest text-zinc-400 items-center overflow-x-auto no-scrollbar">
                 <span class="text-zinc-600 pr-2">Client //</span>
@@ -93,17 +88,14 @@
     </nav>
 
     <main>
-        <!-- Archive -->
         <div id="page-archive" class="page-container">
             <div id="portfolio-grid" class="grid gap-1"></div>
         </div>
 
-        <!-- Blog -->
         <div id="page-blog" class="page-container hidden max-w-4xl mx-auto px-4">
             <div id="blog-posts" class="space-y-32"></div>
         </div>
 
-        <!-- About -->
         <div id="page-about" class="page-container hidden max-w-4xl mx-auto px-4 py-16">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-20 items-start">
                 <div id="about-content" class="prose"></div>
@@ -115,16 +107,17 @@
         </div>
     </main>
 
-    <!-- Modal -->
     <div id="video-modal" class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-black/95 p-4">
         <button onclick="closeModal()" class="absolute top-8 right-8 text-white hover:scale-110 transition-transform text-3xl">✕</button>
         <div id="video-container" class="w-full max-w-6xl aspect-video bg-zinc-950 shadow-2xl"></div>
     </div>
 
-    <!-- Website Logic -->
     <script src="sanity-fetch-v2.js"></script>
+
     <script>
+        // --- NAVIGATION & VIEW LOGIC ---
         let currentPage = 'archive';
+        let currentView = 'grid';
 
         function navigateTo(pageId) {
             currentPage = pageId;
@@ -177,16 +170,46 @@
             if (grid) grid.style.gridTemplateColumns = `repeat(${val}, minmax(0, 1fr))`;
         }
 
+        // --- INFINITE SCROLL ---
+        window.onscroll = function(ev) {
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
+                if (typeof window.loadMoreProjects === 'function') {
+                    window.loadMoreProjects();
+                }
+            }
+        };
+
+        // --- SOCIAL VIDEO EMBEDDER (FINAL VERSION) ---
         function openModal(url) {
             if (!url) return;
             const modal = document.getElementById('video-modal');
             const container = document.getElementById('video-container');
-            let embed = url;
-            if (url.includes('youtube.com/shorts/')) embed = url.replace('shorts/', 'embed/');
-            else if (url.includes('vimeo.com')) embed = `https://player.vimeo.com/video/${url.split('/').pop()}`;
-            else if (url.includes('youtube.com/watch')) embed = `https://www.youtube.com/embed/${url.split('v=')[1]?.split('&')[0]}`;
-            
-            container.innerHTML = `<iframe src="${embed}?autoplay=1" class="w-full h-full" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+            container.innerHTML = ''; 
+
+            let embedHTML = '';
+
+            if (url.includes('instagram.com')) {
+                 embedHTML = `<iframe src="${url}embed" width="400" height="480" frameborder="0" scrolling="no" allowtransparency="true"></iframe>`;
+            } 
+            else if (url.includes('tiktok.com')) {
+                const videoId = url.split('/video/')[1]?.split('?')[0];
+                embedHTML = `<iframe src="https://www.tiktok.com/embed/v2/${videoId}" width="325" height="575" frameborder="0"></iframe>`;
+            }
+            else if (url.includes('twitter.com') || url.includes('x.com')) {
+                embedHTML = `<div class="bg-white p-8 text-black text-center"><p class="mb-4">Twitter embeds require external scripts.</p><a href="${url}" target="_blank" class="bg-blue-500 text-white px-4 py-2 rounded">Open Tweet</a></div>`;
+            }
+            else if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                let id = url.split('v=')[1]?.split('&')[0];
+                if (url.includes('youtu.be/')) id = url.split('youtu.be/')[1];
+                if (url.includes('shorts/')) id = url.split('shorts/')[1]; // Added explicit shorts support
+                embedHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" class="w-full h-full" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+            }
+            else if (url.includes('vimeo.com')) {
+                const id = url.split('/').pop();
+                embedHTML = `<iframe src="https://player.vimeo.com/video/${id}?autoplay=1" class="w-full h-full" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+            }
+
+            container.innerHTML = embedHTML;
             modal.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
