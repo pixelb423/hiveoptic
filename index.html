@@ -131,7 +131,6 @@
 
     <script>
         // --- GLOBAL STATE ---
-        // We attach these to 'window' so sanity-fetch-v2.js can see them
         window.currentPage = 'archive';
         window.currentView = 'grid'; 
 
@@ -139,13 +138,10 @@
         function navigateTo(pageId) {
             window.currentPage = pageId;
             
-            // Hide all pages
             document.querySelectorAll('.page-container').forEach(p => p.classList.add('hidden'));
-            // Show target page
             const target = document.getElementById(`page-${pageId}`);
             if(target) target.classList.remove('hidden');
             
-            // Update Nav Links
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             const navLink = document.getElementById(`nav-${pageId}`);
             if(navLink) navLink.classList.add('active');
@@ -153,17 +149,13 @@
             const controls = document.getElementById('view-controls');
             const filters = document.getElementById('filter-section');
             
-            // Logic for visibility
             if (pageId === 'archive') {
                 if(controls) { controls.style.visibility = 'visible'; controls.style.opacity = '1'; }
                 if(filters) filters.style.display = 'block';
-                // Trigger filter reload from external script
                 if (typeof window.applyFilters === 'function') window.applyFilters();
             } else {
                 if(controls) { controls.style.visibility = 'hidden'; controls.style.opacity = '0'; }
                 if(filters) filters.style.display = 'none';
-                
-                // Trigger external fetchers
                 if (pageId === 'blog' && typeof window.fetchBlog === 'function') window.fetchBlog();
                 if (pageId === 'about' && typeof window.fetchAbout === 'function') window.fetchAbout();
             }
@@ -171,42 +163,39 @@
 
         // --- VIEW CONTROLS (Grid/List) ---
         function setView(view) {
-            window.currentView = view; // Update GLOBAL state
+            window.currentView = view;
             
             const densityCtrl = document.getElementById('density-control');
             const btnGrid = document.getElementById('btn-grid');
             const btnList = document.getElementById('btn-list');
+            const grid = document.getElementById('portfolio-grid');
 
             if(view === 'list') {
-                // Disable Density Control in List View
-                if(densityCtrl) {
-                    densityCtrl.style.opacity = '0.2';
-                    densityCtrl.style.pointerEvents = 'none';
-                }
+                // LIST MODE: Force 1 column
+                if(densityCtrl) { densityCtrl.style.opacity = '0.2'; densityCtrl.style.pointerEvents = 'none'; }
                 if(btnList) btnList.classList.add('active');
                 if(btnGrid) btnGrid.classList.remove('active');
+                if(grid) grid.style.gridTemplateColumns = '1fr'; // <--- FIX: FORCE 1 COL
             } else {
-                // Enable Density Control in Grid View
-                if(densityCtrl) {
-                    densityCtrl.style.opacity = '1';
-                    densityCtrl.style.pointerEvents = 'auto';
-                }
+                // GRID MODE: Restore selected columns
+                if(densityCtrl) { densityCtrl.style.opacity = '1'; densityCtrl.style.pointerEvents = 'auto'; }
                 if(btnGrid) btnGrid.classList.add('active');
                 if(btnList) btnList.classList.remove('active');
+                
+                // Restore value from dropdown
+                const val = document.getElementById('grid-select').value;
+                if(grid) grid.style.gridTemplateColumns = `repeat(${val}, minmax(0, 1fr))`;
             }
 
-            // Re-render the grids with the new view style
+            // Trigger Re-render
             if (typeof window.renderGrid === 'function') window.renderGrid();
-            if (typeof window.renderVaultGrid === 'function' && window.currentPage === 'vault') window.renderVaultGrid();
         }
 
         function updateGridDensity(val) {
-            // Apply columns to both grids
+            if(window.currentView === 'list') return; // Don't update if in list mode
             const grid = document.getElementById('portfolio-grid');
             const vaultGrid = document.getElementById('vault-grid');
-            
             const style = `repeat(${val}, minmax(0, 1fr))`;
-            
             if (grid) grid.style.gridTemplateColumns = style;
             if (vaultGrid) vaultGrid.style.gridTemplateColumns = style;
         }
@@ -227,27 +216,28 @@
 
             let embedHTML = '';
 
-            // Helper to get YouTube ID (Standard, Short, or Embed)
-            const getYoutubeId = (link) => {
-                const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-                const match = link.match(regex);
-                return match ? match[1] : null;
-            };
+            // --- YOUTUBE SHORTS & STANDARD LOGIC ---
+            if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                let id = null;
+                
+                // 1. Handle Shorts Explicitly
+                if (url.includes('shorts/')) {
+                    id = url.split('shorts/')[1].split('?')[0];
+                } 
+                // 2. Handle Standard ?v=
+                else if (url.includes('v=')) {
+                    id = url.split('v=')[1].split('&')[0];
+                }
+                // 3. Handle youtu.be/ID
+                else if (url.includes('youtu.be/')) {
+                    id = url.split('youtu.be/')[1].split('?')[0];
+                }
 
-            if (url.includes('instagram.com')) {
-                 embedHTML = `<iframe src="${url}embed" width="400" height="480" frameborder="0" scrolling="no" allowtransparency="true"></iframe>`;
-            } 
-            else if (url.includes('tiktok.com')) {
-                const videoId = url.split('/video/')[1]?.split('?')[0];
-                embedHTML = `<iframe src="https://www.tiktok.com/embed/v2/${videoId}" width="325" height="575" frameborder="0"></iframe>`;
+                if (id) {
+                    embedHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1&rel=0" class="w-full h-full" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+                }
             }
-            else if (url.includes('twitter.com') || url.includes('x.com')) {
-                embedHTML = `<div class="bg-white p-8 text-black text-center flex flex-col items-center justify-center h-full"><p class="mb-4">Twitter embeds require external scripts.</p><a href="${url}" target="_blank" class="bg-blue-500 text-white px-6 py-3 rounded uppercase text-xs tracking-widest">Open Tweet</a></div>`;
-            }
-            else if (url.includes('youtube.com') || url.includes('youtu.be')) {
-                const id = getYoutubeId(url);
-                if(id) embedHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" class="w-full h-full" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
-            }
+            // --- OTHER PLATFORMS ---
             else if (url.includes('vimeo.com')) {
                 const id = url.split('/').pop();
                 embedHTML = `<iframe src="https://player.vimeo.com/video/${id}?autoplay=1" class="w-full h-full" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
