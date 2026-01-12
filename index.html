@@ -33,6 +33,11 @@
         
         .nav-link { font-size: 10px; text-transform: uppercase; letter-spacing: 0.25em; color: #a1a1aa; transition: color 0.2s; cursor: pointer; }
         .nav-link:hover, .nav-link.active { color: #fff; }
+
+        /* Vault Specifics */
+        .vault-locked { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 50vh; }
+        .vault-input { background: transparent; border-bottom: 1px solid #333; color: #fff; text-align: center; letter-spacing: 0.5em; outline: none; padding: 10px; text-transform: uppercase; }
+        .vault-input:focus { border-color: #fbbf24; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -73,6 +78,7 @@
                     <span onclick="navigateTo('archive')" class="nav-link active" id="nav-archive">Archive</span>
                     <span onclick="navigateTo('blog')" class="nav-link" id="nav-blog">Blog</span>
                     <span onclick="navigateTo('about')" class="nav-link" id="nav-about">About</span>
+                    <span onclick="navigateTo('vault')" class="nav-link text-zinc-800 hover:text-zinc-600" id="nav-vault">///</span>
                 </div>
             </div>
         </div>
@@ -105,6 +111,15 @@
                 </div>
             </div>
         </div>
+
+        <div id="page-vault" class="page-container hidden">
+            <div id="vault-lock" class="vault-locked">
+                <div class="text-4xl mb-8">🔒</div>
+                <input type="password" id="vault-pass" placeholder="KEY" class="vault-input mb-4" onkeyup="checkVault(event)">
+                <p id="vault-msg" class="text-[9px] uppercase tracking-widest text-red-500 hidden">Access Denied</p>
+            </div>
+            <div id="vault-grid" class="grid gap-1 hidden"></div>
+        </div>
     </main>
 
     <div id="video-modal" class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-black/95 p-4">
@@ -115,7 +130,7 @@
     <script src="sanity-fetch-v2.js"></script>
 
     <script>
-        // --- NAVIGATION & VIEW LOGIC ---
+        // --- NAVIGATION ---
         let currentPage = 'archive';
         let currentView = 'grid';
 
@@ -130,6 +145,7 @@
             const controls = document.getElementById('view-controls');
             const filters = document.getElementById('filter-section');
             
+            // Logic for visibility
             if (pageId === 'archive') {
                 controls.style.visibility = 'visible';
                 controls.style.opacity = '1';
@@ -161,25 +177,25 @@
                 btnGrid.classList.add('active');
                 btnList.classList.remove('active');
             }
-            if (typeof applyFilters === 'function') applyFilters();
+            if (typeof renderGrid === 'function') renderGrid();
+            if (typeof renderVaultGrid === 'function' && currentPage === 'vault') renderVaultGrid();
         }
 
         function updateGridDensity(val) {
-            if(currentView !== 'grid') return;
             const grid = document.getElementById('portfolio-grid');
+            const vaultGrid = document.getElementById('vault-grid');
             if (grid) grid.style.gridTemplateColumns = `repeat(${val}, minmax(0, 1fr))`;
+            if (vaultGrid) vaultGrid.style.gridTemplateColumns = `repeat(${val}, minmax(0, 1fr))`;
         }
 
         // --- INFINITE SCROLL ---
         window.onscroll = function(ev) {
-            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
-                if (typeof window.loadMoreProjects === 'function') {
-                    window.loadMoreProjects();
-                }
+            if (currentPage === 'archive' && (window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
+                if (typeof window.loadMoreProjects === 'function') window.loadMoreProjects();
             }
         };
 
-        // --- SOCIAL VIDEO EMBEDDER (FINAL VERSION) ---
+        // --- VIDEO MODAL ---
         function openModal(url) {
             if (!url) return;
             const modal = document.getElementById('video-modal');
@@ -196,17 +212,20 @@
                 embedHTML = `<iframe src="https://www.tiktok.com/embed/v2/${videoId}" width="325" height="575" frameborder="0"></iframe>`;
             }
             else if (url.includes('twitter.com') || url.includes('x.com')) {
-                embedHTML = `<div class="bg-white p-8 text-black text-center"><p class="mb-4">Twitter embeds require external scripts.</p><a href="${url}" target="_blank" class="bg-blue-500 text-white px-4 py-2 rounded">Open Tweet</a></div>`;
+                embedHTML = `<div class="bg-white p-8 text-black text-center flex flex-col items-center justify-center h-full"><p class="mb-4">Twitter embeds require external scripts.</p><a href="${url}" target="_blank" class="bg-blue-500 text-white px-6 py-3 rounded uppercase text-xs tracking-widest">Open Tweet</a></div>`;
             }
             else if (url.includes('youtube.com') || url.includes('youtu.be')) {
                 let id = url.split('v=')[1]?.split('&')[0];
                 if (url.includes('youtu.be/')) id = url.split('youtu.be/')[1];
-                if (url.includes('shorts/')) id = url.split('shorts/')[1]; // Added explicit shorts support
+                if (url.includes('shorts/')) id = url.split('shorts/')[1].split('?')[0]; 
                 embedHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" class="w-full h-full" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
             }
             else if (url.includes('vimeo.com')) {
                 const id = url.split('/').pop();
                 embedHTML = `<iframe src="https://player.vimeo.com/video/${id}?autoplay=1" class="w-full h-full" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+            }
+            else {
+                 embedHTML = `<div class="bg-white p-8 text-black text-center flex flex-col items-center justify-center h-full"><a href="${url}" target="_blank" class="bg-zinc-800 text-white px-6 py-3 rounded uppercase text-xs tracking-widest">Open Link</a></div>`;
             }
 
             container.innerHTML = embedHTML;
@@ -218,6 +237,20 @@
             document.getElementById('video-modal').classList.add('hidden');
             document.getElementById('video-container').innerHTML = '';
             document.body.style.overflow = 'auto';
+        }
+
+        // --- VAULT SECURITY (CLIENT SIDE) ---
+        function checkVault(e) {
+            if (e.key === 'Enter') {
+                const pass = document.getElementById('vault-pass').value;
+                if(pass === 'hive123') { // CHANGE YOUR PASSWORD HERE
+                    document.getElementById('vault-lock').classList.add('hidden');
+                    document.getElementById('vault-grid').classList.remove('hidden');
+                    if(typeof fetchVault === 'function') fetchVault();
+                } else {
+                    document.getElementById('vault-msg').classList.remove('hidden');
+                }
+            }
         }
     </script>
 </body>
