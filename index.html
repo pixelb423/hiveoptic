@@ -130,67 +130,90 @@
     <script src="sanity-fetch-v2.js"></script>
 
     <script>
-        // --- NAVIGATION ---
-        let currentPage = 'archive';
-        let currentView = 'grid';
+        // --- GLOBAL STATE ---
+        // We attach these to 'window' so sanity-fetch-v2.js can see them
+        window.currentPage = 'archive';
+        window.currentView = 'grid'; 
 
+        // --- NAVIGATION ---
         function navigateTo(pageId) {
-            currentPage = pageId;
-            document.querySelectorAll('.page-container').forEach(p => p.classList.add('hidden'));
-            document.getElementById(`page-${pageId}`).classList.remove('hidden');
+            window.currentPage = pageId;
             
+            // Hide all pages
+            document.querySelectorAll('.page-container').forEach(p => p.classList.add('hidden'));
+            // Show target page
+            const target = document.getElementById(`page-${pageId}`);
+            if(target) target.classList.remove('hidden');
+            
+            // Update Nav Links
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            document.getElementById(`nav-${pageId}`).classList.add('active');
+            const navLink = document.getElementById(`nav-${pageId}`);
+            if(navLink) navLink.classList.add('active');
 
             const controls = document.getElementById('view-controls');
             const filters = document.getElementById('filter-section');
             
             // Logic for visibility
             if (pageId === 'archive') {
-                controls.style.visibility = 'visible';
-                controls.style.opacity = '1';
-                filters.style.display = 'block';
-                if (typeof applyFilters === 'function') applyFilters();
+                if(controls) { controls.style.visibility = 'visible'; controls.style.opacity = '1'; }
+                if(filters) filters.style.display = 'block';
+                // Trigger filter reload from external script
+                if (typeof window.applyFilters === 'function') window.applyFilters();
             } else {
-                controls.style.visibility = 'hidden';
-                controls.style.opacity = '0';
-                filters.style.display = 'none';
-                if (pageId === 'blog' && typeof fetchBlog === 'function') fetchBlog();
-                if (pageId === 'about' && typeof fetchAbout === 'function') fetchAbout();
+                if(controls) { controls.style.visibility = 'hidden'; controls.style.opacity = '0'; }
+                if(filters) filters.style.display = 'none';
+                
+                // Trigger external fetchers
+                if (pageId === 'blog' && typeof window.fetchBlog === 'function') window.fetchBlog();
+                if (pageId === 'about' && typeof window.fetchAbout === 'function') window.fetchAbout();
             }
         }
 
+        // --- VIEW CONTROLS (Grid/List) ---
         function setView(view) {
-            currentView = view;
+            window.currentView = view; // Update GLOBAL state
+            
             const densityCtrl = document.getElementById('density-control');
             const btnGrid = document.getElementById('btn-grid');
             const btnList = document.getElementById('btn-list');
 
             if(view === 'list') {
-                densityCtrl.style.opacity = '0.2';
-                densityCtrl.style.pointerEvents = 'none';
-                btnList.classList.add('active');
-                btnGrid.classList.remove('active');
+                // Disable Density Control in List View
+                if(densityCtrl) {
+                    densityCtrl.style.opacity = '0.2';
+                    densityCtrl.style.pointerEvents = 'none';
+                }
+                if(btnList) btnList.classList.add('active');
+                if(btnGrid) btnGrid.classList.remove('active');
             } else {
-                densityCtrl.style.opacity = '1';
-                densityCtrl.style.pointerEvents = 'auto';
-                btnGrid.classList.add('active');
-                btnList.classList.remove('active');
+                // Enable Density Control in Grid View
+                if(densityCtrl) {
+                    densityCtrl.style.opacity = '1';
+                    densityCtrl.style.pointerEvents = 'auto';
+                }
+                if(btnGrid) btnGrid.classList.add('active');
+                if(btnList) btnList.classList.remove('active');
             }
-            if (typeof renderGrid === 'function') renderGrid();
-            if (typeof renderVaultGrid === 'function' && currentPage === 'vault') renderVaultGrid();
+
+            // Re-render the grids with the new view style
+            if (typeof window.renderGrid === 'function') window.renderGrid();
+            if (typeof window.renderVaultGrid === 'function' && window.currentPage === 'vault') window.renderVaultGrid();
         }
 
         function updateGridDensity(val) {
+            // Apply columns to both grids
             const grid = document.getElementById('portfolio-grid');
             const vaultGrid = document.getElementById('vault-grid');
-            if (grid) grid.style.gridTemplateColumns = `repeat(${val}, minmax(0, 1fr))`;
-            if (vaultGrid) vaultGrid.style.gridTemplateColumns = `repeat(${val}, minmax(0, 1fr))`;
+            
+            const style = `repeat(${val}, minmax(0, 1fr))`;
+            
+            if (grid) grid.style.gridTemplateColumns = style;
+            if (vaultGrid) vaultGrid.style.gridTemplateColumns = style;
         }
 
         // --- INFINITE SCROLL ---
         window.onscroll = function(ev) {
-            if (currentPage === 'archive' && (window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
+            if (window.currentPage === 'archive' && (window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
                 if (typeof window.loadMoreProjects === 'function') window.loadMoreProjects();
             }
         };
@@ -204,6 +227,13 @@
 
             let embedHTML = '';
 
+            // Helper to get YouTube ID (Standard, Short, or Embed)
+            const getYoutubeId = (link) => {
+                const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+                const match = link.match(regex);
+                return match ? match[1] : null;
+            };
+
             if (url.includes('instagram.com')) {
                  embedHTML = `<iframe src="${url}embed" width="400" height="480" frameborder="0" scrolling="no" allowtransparency="true"></iframe>`;
             } 
@@ -215,10 +245,8 @@
                 embedHTML = `<div class="bg-white p-8 text-black text-center flex flex-col items-center justify-center h-full"><p class="mb-4">Twitter embeds require external scripts.</p><a href="${url}" target="_blank" class="bg-blue-500 text-white px-6 py-3 rounded uppercase text-xs tracking-widest">Open Tweet</a></div>`;
             }
             else if (url.includes('youtube.com') || url.includes('youtu.be')) {
-                let id = url.split('v=')[1]?.split('&')[0];
-                if (url.includes('youtu.be/')) id = url.split('youtu.be/')[1];
-                if (url.includes('shorts/')) id = url.split('shorts/')[1].split('?')[0]; 
-                embedHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" class="w-full h-full" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+                const id = getYoutubeId(url);
+                if(id) embedHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" class="w-full h-full" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
             }
             else if (url.includes('vimeo.com')) {
                 const id = url.split('/').pop();
@@ -229,24 +257,26 @@
             }
 
             container.innerHTML = embedHTML;
-            modal.classList.remove('hidden');
+            if(modal) modal.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
 
         function closeModal() {
-            document.getElementById('video-modal').classList.add('hidden');
-            document.getElementById('video-container').innerHTML = '';
+            const modal = document.getElementById('video-modal');
+            const container = document.getElementById('video-container');
+            if(modal) modal.classList.add('hidden');
+            if(container) container.innerHTML = '';
             document.body.style.overflow = 'auto';
         }
 
-        // --- VAULT SECURITY (CLIENT SIDE) ---
+        // --- VAULT SECURITY ---
         function checkVault(e) {
             if (e.key === 'Enter') {
                 const pass = document.getElementById('vault-pass').value;
-                if(pass === 'hive123') { // CHANGE YOUR PASSWORD HERE
+                if(pass === 'hive123') { 
                     document.getElementById('vault-lock').classList.add('hidden');
                     document.getElementById('vault-grid').classList.remove('hidden');
-                    if(typeof fetchVault === 'function') fetchVault();
+                    if(typeof window.fetchVault === 'function') window.fetchVault();
                 } else {
                     document.getElementById('vault-msg').classList.remove('hidden');
                 }
