@@ -20,25 +20,30 @@ let endOfList = false;
 
 // --- INITIALIZATION ---
 window.addEventListener('DOMContentLoaded', () => {
-    // Ensure window globals exist if index.html hasn't run yet
+    // Ensure window globals exist
     if (typeof window.currentView === 'undefined') window.currentView = 'grid';
     if (typeof window.currentPage === 'undefined') window.currentPage = 'archive';
     
     initArchive();
 });
 
-// --- HELPER: THUMBNAIL GENERATOR ---
+// --- HELPER: ROBUST THUMBNAIL GENERATOR ---
 function getThumbnail(sanityUrl, videoUrl) {
     if (sanityUrl) return sanityUrl; // Manual overrides first
 
     if (videoUrl) {
         let videoId = null;
-        // YouTube Shorts & Standard
+        
+        // 1. Handle YouTube Shorts
         if (videoUrl.includes('youtube.com/shorts/')) {
             videoId = videoUrl.split('shorts/')[1]?.split('?')[0];
-        } else if (videoUrl.includes('youtube.com/watch')) {
+        } 
+        // 2. Handle Standard YouTube
+        else if (videoUrl.includes('youtube.com/watch')) {
             videoId = videoUrl.split('v=')[1]?.split('&')[0];
-        } else if (videoUrl.includes('youtu.be/')) {
+        } 
+        // 3. Handle Shortened Links
+        else if (videoUrl.includes('youtu.be/')) {
             videoId = videoUrl.split('youtu.be/')[1]?.split('?')[0];
         }
 
@@ -89,18 +94,14 @@ function renderFilterButtons() {
 
 window.setFilter = function(type, value) {
     activeFilters[type] = value;
-    
-    // Update visual state of buttons
     document.querySelectorAll(`.${type}-link`).forEach(b => {
-        // Check if the button's onclick string contains the value we just selected
         const isMatch = b.getAttribute('onclick').includes(`'${value}'`);
         b.classList.toggle(type === 'client' ? 'active-client' : 'active-cat', isMatch);
     });
-    
     resetAndLoadProjects();
 }
 
-// Exposed for index.html to call if needed
+// Exposed for index.html to call
 window.applyFilters = function() {
     resetAndLoadProjects();
 }
@@ -148,7 +149,6 @@ window.loadMoreProjects = async function() {
         renderGrid(newProjects);
 
         if(status) status.innerText = endOfList ? "End of List" : "Syncing";
-        
         const counter = document.getElementById('project-counter');
         if(counter) counter.innerText = allProjects.length.toString().padStart(3, '0');
         
@@ -159,16 +159,11 @@ window.renderGrid = function(projectsToRender = []) {
     const grid = document.getElementById('portfolio-grid');
     if(!grid) return;
     
-    // If called without arguments (e.g., switching views), re-render all current projects
-    if (projectsToRender.length === 0 && allProjects.length > 0) projectsToRender = allProjects;
-    if (projectsToRender.length === 0 && allProjects.length === 0) return; // Nothing to render
-
-    // Clear grid if we are re-rendering everything (like view switch)
-    // NOTE: For infinite scroll (appending), we generally don't clear, 
-    // but specific logic is needed to distinguish append vs switch. 
-    // Here we strictly append ONLY if arguments were passed. 
-    // If no arguments (view switch), we clear first.
-    if (arguments.length === 0) grid.innerHTML = '';
+    // View switching logic: if no args, re-render everything
+    if (projectsToRender.length === 0 && allProjects.length > 0) {
+        projectsToRender = allProjects;
+        grid.innerHTML = ''; // Clear for full re-render
+    }
 
     const html = projectsToRender.map(p => {
         const thumb = getThumbnail(p.sanityThumbUrl, p.videoUrl);
@@ -176,15 +171,14 @@ window.renderGrid = function(projectsToRender = []) {
             ? `<img src="${thumb}" class="w-full h-full object-cover" loading="lazy">`
             : `<div class="w-full h-full bg-zinc-900 flex items-center justify-center text-zinc-700 text-xs">NO IMG</div>`;
 
-        // USE GLOBAL WINDOW VARIABLE HERE
         if (window.currentView === 'list') {
              return `
-                <div class="list-view-item p-4 flex justify-between items-center cursor-pointer group" onclick="openModal('${p.videoUrl}')">
+                <div class="list-view-item p-4 flex justify-between items-center cursor-pointer group w-full" onclick="openModal('${p.videoUrl}')">
                     <div class="flex items-center gap-6">
-                        <div class="w-16 h-9 bg-zinc-800 overflow-hidden hidden md:block">${mediaHtml}</div>
+                        <div class="w-24 h-14 bg-zinc-800 overflow-hidden hidden md:block flex-shrink-0">${mediaHtml}</div>
                         <h3 class="text-sm font-light uppercase tracking-widest group-hover:text-amber-500 transition-colors">${p.title}</h3>
                     </div>
-                    <span class="text-[10px] text-zinc-500 uppercase tracking-widest">${p.clientTitle || 'Personal'}</span>
+                    <span class="text-[10px] text-zinc-500 uppercase tracking-widest whitespace-nowrap">${p.clientTitle || 'Personal'}</span>
                 </div>`;
         } else {
             return `
@@ -200,7 +194,6 @@ window.renderGrid = function(projectsToRender = []) {
     
     grid.insertAdjacentHTML('beforeend', html);
 }
-
 
 /**
  * FETCH: VAULT
@@ -250,6 +243,7 @@ window.renderVaultGrid = function() {
     }).join('');
 }
 
+// ... (Fetch Blog and About functions remain identical, ensuring globals are safe)
 window.fetchBlog = async function() {
     const container = document.getElementById('blog-posts');
     if(!container) return;
