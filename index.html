@@ -1,277 +1,353 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>bilal | archive</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #000; color: #fff; margin: 0; }
-        .tracking-ultra { letter-spacing: 0.6em; }
-        .tag-btn { transition: all 0.3s ease; border-bottom: 1px solid transparent; cursor: pointer; white-space: nowrap; }
-        .tag-btn.active-client { color: #fff; border-color: #fff; }
-        .tag-btn.active-cat { color: #fbbf24; border-color: #fbbf24; }
-        
-        main { padding-top: 240px; min-height: 100vh; } 
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Photography and short-form video campaigns.">
+<title>Photography and short-form campaigns</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,500;12..96,800&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#000; --raise:#0c0d0e; --ink:#f1f1ef; --muted:#8c9196; --line:#25282b; --ice:#bfe3ff;
+  --display:'Bricolage Grotesque','Helvetica Neue',Arial,sans-serif;
+  --text:'Newsreader',Georgia,serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(68px + env(safe-area-inset-top,0px));background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--text);font-size:19px;line-height:1.6}
+a{color:inherit}
+h1,h2,h3{font-family:var(--display);margin:0;line-height:1;letter-spacing:-.03em}
+:focus-visible{outline:2px solid var(--ice);outline-offset:3px}
+.wrap{max-width:1280px;margin:0 auto;padding:0 clamp(16px,4vw,40px)}
 
-        .project-card { transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 1; }
-        .project-card:hover { transform: scale(1.05); z-index: 50; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        
-        .custom-select {
-            appearance: none; background: #111; border: 1px solid #333; color: #a1a1aa;
-            padding: 6px 24px 6px 10px; font-size: 10px; text-transform: uppercase;
-            cursor: pointer; outline: none; border-radius: 2px;
-        }
+header.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(0,0,0,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px;gap:16px}
+.logo{font-family:var(--display);font-weight:800;font-size:20px;text-decoration:none;letter-spacing:-.04em}
+.nav ul{display:flex;gap:28px;list-style:none;margin:0;padding:0}
+.nav ul a{text-decoration:none;font-family:var(--display);font-size:15px;color:var(--muted)}
+.nav ul a:hover{color:var(--ink)}
+.btn{display:inline-block;font-family:var(--display);font-size:15px;font-weight:500;padding:12px 20px;background:var(--ink);color:#000;border:0;border-radius:2px;text-decoration:none;cursor:pointer}
+.btn:hover{background:#fff}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid #3a3e42}
+.btn.ghost:hover{border-color:var(--ink)}
+@media(max-width:700px){.nav ul{display:none}}
 
-        .icon-btn { opacity: 0.4; transition: opacity 0.2s; cursor: pointer; color: #fff; border: none; background: none; }
-        .icon-btn.active { opacity: 1; }
-        .list-view-item { border-bottom: 1px solid #111; transition: background 0.2s; }
-        .list-view-item:hover { background: #0a0a0a; }
-        #video-modal { backdrop-filter: blur(15px); }
-        
-        .nav-link { font-size: 10px; text-transform: uppercase; letter-spacing: 0.25em; color: #a1a1aa; transition: color 0.2s; cursor: pointer; }
-        .nav-link:hover, .nav-link.active { color: #fff; }
+.hero{padding:clamp(48px,8vw,104px) 0 clamp(40px,6vw,72px);border-bottom:1px solid var(--line)}
+.hero .label{font-family:var(--display);font-size:clamp(16px,1.6vw,20px);color:var(--muted);margin:0 0 8px}
+.reach{font-family:var(--display);font-weight:800;font-size:clamp(96px,26vw,400px);line-height:.82;letter-spacing:-.06em;margin:0;font-variant-numeric:tabular-nums}
+.split{margin-top:clamp(28px,4vw,48px)}
+.bar{display:flex;height:10px;gap:3px}
+.bar i{display:block;background:#4a5056;transition:width 1.4s cubic-bezier(.2,.7,.2,1)}
+.bar i:first-child{background:var(--ice)}
+.bar i:nth-child(2){background:#8e989f}
+.legend{display:flex;flex-wrap:wrap;gap:8px 32px;margin-top:12px;font-family:var(--display);font-size:14px;color:var(--muted)}
+.legend b{color:var(--ink);font-weight:500;margin-left:6px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-top:clamp(32px,5vw,64px);border-top:1px solid var(--line)}
+.stats div{padding:20px 20px 0 0}
+.stats div+div{padding-left:20px;border-left:1px solid var(--line)}
+.stats b{display:block;font-family:var(--display);font-weight:800;font-size:clamp(44px,8vw,112px);line-height:1;letter-spacing:-.05em}
+.stats span{font-family:var(--display);font-size:15px;color:var(--muted)}
+.hero .intro{display:flex;flex-wrap:wrap;gap:20px 32px;align-items:center;justify-content:space-between;margin-top:clamp(28px,4vw,48px)}
+.profile{display:flex;align-items:center;gap:clamp(16px,2.4vw,28px);margin-bottom:clamp(32px,5vw,56px)}
+.pfp{flex:none;width:clamp(76px,9vw,120px);aspect-ratio:1;border-radius:50%;overflow:hidden;background:var(--raise);border:1px solid #3a3e42;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:clamp(30px,4vw,48px);color:#4a5056}
+.pfp img{width:100%;height:100%;object-fit:cover;display:block}
+.profile h1{font-size:clamp(28px,3.4vw,44px);font-weight:800}
+.profile p{margin:8px 0 0;color:#b9bcbf;max-width:46ch;font-size:18px;line-height:1.4}
+.profile p:empty{display:none}
 
-        /* Vault Specifics */
-        .vault-locked { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 50vh; }
-        .vault-input { background: transparent; border-bottom: 1px solid #333; color: #fff; text-align: center; letter-spacing: 0.5em; outline: none; padding: 10px; text-transform: uppercase; }
-        .vault-input:focus { border-color: #fbbf24; }
-    </style>
+section{padding:clamp(64px,9vw,112px) 0}
+.sec-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:20px;margin-bottom:32px}
+.sec-head h2{font-size:clamp(36px,5vw,68px);font-weight:800}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:var(--display);font-size:14px;padding:8px 14px;border:1px solid #3a3e42;background:transparent;color:var(--ink);border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:#000;border-color:var(--ink)}
+
+.vgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.vcard{margin:0;min-width:0}
+.vcard[hidden]{display:none}
+.vbox{position:relative;aspect-ratio:9/16;background:var(--raise);overflow:hidden;border:1px solid var(--line)}
+.vbox img,.vbox iframe{position:absolute;inset:0;width:100%;height:100%;display:block;border:0;object-fit:cover}
+.blank{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(160deg,#15181b,#050607);font-family:var(--display);font-weight:800;font-size:22px;color:#2c3237}
+.play{position:absolute;inset:0;width:100%;height:100%;border:0;background:linear-gradient(to top,rgba(0,0,0,.65),transparent 45%);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.play span{width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.55);border:1.5px solid rgba(255,255,255,.8);display:grid;place-items:center;transition:transform .2s}
+.play:hover span{transform:scale(1.08)}
+.play svg{width:22px;height:22px;margin-left:3px}
+.tag{position:absolute;left:10px;top:10px;z-index:2;font-family:var(--display);font-size:12px;padding:4px 9px;background:rgba(0,0,0,.7);border:1px solid #3a3e42;border-radius:999px}
+.vmeta{display:flex;justify-content:space-between;gap:12px;padding-top:10px;font-family:var(--display);font-size:14px}
+.vmeta span{color:var(--muted)}
+.vmeta a{color:var(--ice);text-decoration:none;white-space:nowrap}
+.vmeta a:hover{text-decoration:underline}
+@media(max-width:1000px){.vgrid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.vgrid{gap:10px}}
+
+.pgrid{columns:4 220px;column-gap:16px}
+.pitem{break-inside:avoid;margin:0 0 16px;display:block;width:100%;padding:0;border:0;background:var(--raise);cursor:pointer;position:relative;overflow:hidden}
+.pitem svg,.pitem img{display:block;width:100%;height:100%;position:absolute;inset:0;object-fit:cover;transition:transform .5s}
+.pitem:hover svg,.pitem:hover img{transform:scale(1.03)}
+dialog{border:0;padding:0;background:#000;color:var(--ink);max-width:min(980px,94vw);max-height:92vh;width:100%;box-shadow:0 0 0 1px var(--line)}
+dialog::backdrop{background:rgba(0,0,0,.88)}
+.lbimg{position:relative;width:100%;aspect-ratio:4/5;max-height:80vh;background:var(--raise)}
+.lbimg svg,.lbimg img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.lbbar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;font-family:var(--display);font-size:14px;color:var(--muted)}
+.lbbar button{font:inherit;color:var(--ink);background:none;border:1px solid #3a3e42;border-radius:999px;padding:6px 14px;cursor:pointer}
+
+.contact{border-top:1px solid var(--line)}
+.contact .big{font-family:var(--display);font-weight:800;font-size:clamp(40px,8vw,120px);letter-spacing:-.05em;line-height:.95;margin:0 0 32px;max-width:14ch}
+.contact .links{display:flex;flex-wrap:wrap;gap:12px}
+footer{padding:24px 0 40px;font-family:var(--display);font-size:14px;color:var(--muted);border-top:1px solid var(--line)}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.bar i,.pitem svg,.pitem img{transition:none}}
+</style>
 </head>
-<body class="p-4 md:p-8">
+<body>
 
-    <nav class="fixed top-0 left-0 w-full z-[100] bg-black/95 border-b border-zinc-900 p-6 md:px-12">
-        <div class="flex justify-between items-start mb-10">
-            <div class="cursor-pointer" onclick="navigateTo('archive')">
-                <h1 class="text-base font-light lowercase tracking-ultra">bilal</h1>
-                <p class="text-[10px] uppercase tracking-[0.3em] text-zinc-400 mt-1">multi-threaded archive</p>
-            </div>
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="#top" id="brandName">&nbsp;</a>
+    <nav aria-label="Main"><ul>
+      <li><a href="#videos">Videos</a></li>
+      <li><a href="#photos">Photos</a></li>
+    </ul></nav>
+    <a class="btn" href="#contact">Work with us</a>
+  </div>
+</header>
 
-            <div class="flex items-center gap-10">
-                <div id="view-controls" class="flex items-center gap-6 bg-zinc-900/30 p-2 rounded-sm border border-zinc-800/50">
-                    <div class="text-left border-r border-zinc-800 pr-6">
-                        <span id="project-counter" class="text-2xl font-light">000</span>
-                        <p id="status-tag" class="text-[9px] uppercase tracking-widest text-green-400 italic">syncing</p>
-                    </div>
-
-                    <div id="density-control" class="flex items-center gap-3">
-                        <span class="text-[9px] uppercase text-zinc-400 tracking-tighter">Cols</span>
-                        <select id="grid-select" onchange="updateGridDensity(this.value)" class="custom-select">
-                            <option value="3">3</option><option value="5">5</option><option value="8">8</option>
-                            <option value="12" selected>12</option><option value="24">24</option>
-                        </select>
-                    </div>
-
-                    <div class="flex gap-4 border-l border-zinc-800 pl-4">
-                        <button onclick="setView('grid')" id="btn-grid" class="icon-btn active" title="Grid View">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                        </button>
-                        <button onclick="setView('list')" id="btn-list" class="icon-btn" title="List View">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="flex gap-8 border-l border-zinc-800 pl-10">
-                    <span onclick="navigateTo('archive')" class="nav-link active" id="nav-archive">Archive</span>
-                    <span onclick="navigateTo('blog')" class="nav-link" id="nav-blog">Blog</span>
-                    <span onclick="navigateTo('about')" class="nav-link" id="nav-about">About</span>
-                    <span onclick="navigateTo('vault')" class="nav-link text-zinc-800 hover:text-zinc-600" id="nav-vault">///</span>
-                </div>
-            </div>
-        </div>
-        
-        <div id="filter-section" class="space-y-5">
-            <div id="client-row" class="flex gap-5 text-[10px] uppercase tracking-widest text-zinc-400 items-center overflow-x-auto no-scrollbar">
-                <span class="text-zinc-600 pr-2">Client //</span>
-            </div>
-            <div id="category-row" class="flex gap-5 text-[10px] uppercase tracking-widest text-zinc-400 items-center overflow-x-auto no-scrollbar">
-                <span class="text-zinc-600 pr-2">Genre //</span>
-            </div>
-        </div>
-    </nav>
-
-    <main>
-        <div id="page-archive" class="page-container">
-            <div id="portfolio-grid" class="grid gap-1"></div>
-        </div>
-
-        <div id="page-blog" class="page-container hidden max-w-4xl mx-auto px-4">
-            <div id="blog-posts" class="space-y-32"></div>
-        </div>
-
-        <div id="page-about" class="page-container hidden max-w-4xl mx-auto px-4 py-16">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-20 items-start">
-                <div id="about-content" class="prose"></div>
-                <div id="about-sidebar" class="space-y-10 flex flex-col items-center md:items-end">
-                    <div id="qr-container" class="bg-white p-5 rounded-lg w-56 h-56 flex items-center justify-center shadow-xl"></div>
-                    <div id="contact-list" class="text-right space-y-6"></div>
-                </div>
-            </div>
-        </div>
-
-        <div id="page-vault" class="page-container hidden">
-            <div id="vault-lock" class="vault-locked">
-                <div class="text-4xl mb-8">🔒</div>
-                <input type="password" id="vault-pass" placeholder="KEY" class="vault-input mb-4" onkeyup="checkVault(event)">
-                <p id="vault-msg" class="text-[9px] uppercase tracking-widest text-red-500 hidden">Access Denied</p>
-            </div>
-            <div id="vault-grid" class="grid gap-1 hidden"></div>
-        </div>
-    </main>
-
-    <div id="video-modal" class="fixed inset-0 z-[200] hidden flex items-center justify-center bg-black/95 p-4">
-        <button onclick="closeModal()" class="absolute top-8 right-8 text-white hover:scale-110 transition-transform text-3xl">✕</button>
-        <div id="video-container" class="w-full max-w-6xl aspect-video bg-zinc-950 shadow-2xl"></div>
+<main id="top">
+<div class="hero">
+  <div class="wrap">
+    <div class="profile">
+      <div class="pfp" id="pfp" aria-hidden="false"></div>
+      <div>
+        <h1 id="profName"></h1>
+        <p id="introText"></p>
+      </div>
     </div>
+    <p class="label">Total reach across all campaigns</p>
+    <p class="reach" id="reachNum">0</p>
+    <div class="split">
+      <div class="bar" id="bar" role="img" aria-label="Reach by platform"></div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="intro">
+      <a class="btn ghost" href="#videos">Watch the latest</a>
+    </div>
+  </div>
+</div>
 
-    <script src="sanity-fetch-v2.js"></script>
+<section id="videos">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>Short-form video</h2>
+      <div class="chips" id="vfilters" role="group" aria-label="Filter by platform"></div>
+    </div>
+    <div class="vgrid" id="vgrid"></div>
+  </div>
+</section>
 
-    <script>
-        // --- GLOBAL STATE ---
-        window.currentPage = 'archive';
-        window.currentView = 'grid'; 
+<section id="photos" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head"><h2>Photography</h2></div>
+    <div class="pgrid" id="pgrid"></div>
+  </div>
+</section>
 
-        // --- NAVIGATION ---
-        function navigateTo(pageId) {
-            window.currentPage = pageId;
-            
-            document.querySelectorAll('.page-container').forEach(p => p.classList.add('hidden'));
-            const target = document.getElementById(`page-${pageId}`);
-            if(target) target.classList.remove('hidden');
-            
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            const navLink = document.getElementById(`nav-${pageId}`);
-            if(navLink) navLink.classList.add('active');
+<section id="contact" class="contact">
+  <div class="wrap">
+    <p class="big">Have a campaign in mind?</p>
+    <div class="links" id="links"></div>
+  </div>
+</section>
+</main>
 
-            const controls = document.getElementById('view-controls');
-            const filters = document.getElementById('filter-section');
-            
-            if (pageId === 'archive') {
-                if(controls) { controls.style.visibility = 'visible'; controls.style.opacity = '1'; }
-                if(filters) filters.style.display = 'block';
-                if (typeof window.applyFilters === 'function') window.applyFilters();
-            } else {
-                if(controls) { controls.style.visibility = 'hidden'; controls.style.opacity = '0'; }
-                if(filters) filters.style.display = 'none';
-                if (pageId === 'blog' && typeof window.fetchBlog === 'function') window.fetchBlog();
-                if (pageId === 'about' && typeof window.fetchAbout === 'function') window.fetchAbout();
-            }
-        }
+<footer><div class="wrap"><span id="foot"></span><span id="foot2">Reach figures are cumulative across platforms.</span></div></footer>
 
-        // --- VIEW CONTROLS (Grid/List) ---
-        function setView(view) {
-            window.currentView = view;
-            
-            const densityCtrl = document.getElementById('density-control');
-            const btnGrid = document.getElementById('btn-grid');
-            const btnList = document.getElementById('btn-list');
-            const grid = document.getElementById('portfolio-grid');
+<dialog id="lb" aria-label="Photo viewer">
+  <div class="lbimg" id="lbImg"></div>
+  <div class="lbbar"><span id="lbCap"></span><span><button id="lbPrev" type="button">Previous</button> <button id="lbNext" type="button">Next</button> <button id="lbClose" type="button">Close</button></span></div>
+</dialog>
 
-            if(view === 'list') {
-                // LIST MODE: Force 1 column
-                if(densityCtrl) { densityCtrl.style.opacity = '0.2'; densityCtrl.style.pointerEvents = 'none'; }
-                if(btnList) btnList.classList.add('active');
-                if(btnGrid) btnGrid.classList.remove('active');
-                if(grid) grid.style.gridTemplateColumns = '1fr'; // <--- FIX: FORCE 1 COL
-            } else {
-                // GRID MODE: Restore selected columns
-                if(densityCtrl) { densityCtrl.style.opacity = '1'; densityCtrl.style.pointerEvents = 'auto'; }
-                if(btnGrid) btnGrid.classList.add('active');
-                if(btnList) btnList.classList.remove('active');
-                
-                // Restore value from dropdown
-                const val = document.getElementById('grid-select').value;
-                if(grid) grid.style.gridTemplateColumns = `repeat(${val}, minmax(0, 1fr))`;
-            }
+<script>
+/* =====================================================================
+   1. Your Sanity project ID and dataset. If projectId is empty, the page
+      shows demo content instead.
+   ===================================================================== */
+const SANITY = { projectId: 'gi6q4yr8', dataset: 'portfolio', apiVersion: '2025-01-01' };
 
-            // Trigger Re-render
-            if (typeof window.renderGrid === 'function') window.renderGrid();
-        }
+/* One request fetches everything the page needs. */
+const QUERY = `{
+  "settings": *[_type=="siteSettings"][0]{brand,intro,email,socials,reachByPlatform,stats,"pfp":profileImage.asset->url},
+  "videos": *[_type=="video"]|order(order asc,_createdAt desc){title,platform,url,views,"poster":poster.asset->url},
+  "photos": *[_type=="photo"]|order(order asc,_createdAt desc){alt,"src":image.asset->url,"w":image.asset->metadata.dimensions.width,"h":image.asset->metadata.dimensions.height}
+}`;
 
-        function updateGridDensity(val) {
-            if(window.currentView === 'list') return; // Don't update if in list mode
-            const grid = document.getElementById('portfolio-grid');
-            const vaultGrid = document.getElementById('vault-grid');
-            const style = `repeat(${val}, minmax(0, 1fr))`;
-            if (grid) grid.style.gridTemplateColumns = style;
-            if (vaultGrid) vaultGrid.style.gridTemplateColumns = style;
-        }
+/* Demo content, shown when no project ID is set or Sanity can't be reached. */
+const DEMO = {
+  demo: true,
+  settings: {
+    brand: 'Your name',
+    intro: 'Photography and short-form video for brands that want to be seen.',
+    email: 'hello@example.com',
+    socials: [{label:'Instagram',url:'#'},{label:'TikTok',url:'#'},{label:'YouTube',url:'#'}],
+    reachByPlatform: [{platform:'Instagram',reach:21400000},{platform:'TikTok',reach:17900000},{platform:'YouTube',reach:8900000}],
+    stats: [{value:63,label:'Campaigns delivered'},{value:27,label:'Brands'},{value:6,label:'Years active'}]
+  },
+  videos: [
+    {title:'Summer trail launch',platform:'Instagram',views:'2.1M views',url:''},
+    {title:'Studio behind the scenes',platform:'TikTok',views:'4.8M views',url:''},
+    {title:'City night walk',platform:'YouTube',views:'1.3M views',url:''},
+    {title:'Ceramics drop',platform:'Instagram',views:'890K views',url:''}
+  ],
+  photos: [
+    {alt:'Dunes at sunrise',scene:'dunes',w:4,h:5},
+    {alt:'Glass facade at dusk',scene:'facade',w:3,h:4},
+    {alt:'Stair hall',scene:'stairs',w:4,h:5},
+    {alt:'Pines in fog',scene:'forest',w:1,h:1}
+  ]
+};
 
-        // --- INFINITE SCROLL ---
-        window.onscroll = function(ev) {
-            if (window.currentPage === 'archive' && (window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
-                if (typeof window.loadMoreProjects === 'function') window.loadMoreProjects();
-            }
-        };
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const safeUrl = u => /^https?:\/\//i.test(u || '') ? u : '#';
+const fmt = n => n>=1e9 ? (n/1e9).toFixed(1)+'B' : n>=1e6 ? (n/1e6).toFixed(1)+'M' : n>=1e3 ? Math.round(n/1e3)+'K' : String(Math.round(n));
+const square = (src, n) => src && src.includes('cdn.sanity.io') ? `${src}?w=${n}&h=${n}&fit=crop&auto=format` : src;
+const sized = (src, w) => src && src.includes('cdn.sanity.io') ? `${src}?w=${w}&auto=format` : src;
 
-        // --- VIDEO MODAL ---
-        function openModal(url) {
-            if (!url) return;
-            const modal = document.getElementById('video-modal');
-            const container = document.getElementById('video-container');
-            container.innerHTML = ''; 
+const SCENES = {
+ dunes:'<svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="a1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3d7b6"/><stop offset="1" stop-color="#e9a877"/></linearGradient></defs><rect width="400" height="500" fill="url(#a1)"/><circle cx="290" cy="130" r="38" fill="#fff6e6"/><path d="M0 300C90 240 170 250 260 300S360 330 400 290V500H0Z" fill="#c9773f"/><path d="M0 380C120 310 220 340 400 360V500H0Z" fill="#a95a2a"/></svg>',
+ facade:(()=>{let w='';for(let r=0;r<9;r++)for(let c=0;c<6;c++){const on=(r*7+c*3)%5===0;w+=`<rect x="${30+c*60}" y="${40+r*50}" width="38" height="34" fill="${on?'#f3c56b':'#173b57'}"/>`}return`<svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice"><rect width="400" height="500" fill="#4c7a99"/>${w}</svg>`})(),
+ stairs:(()=>{let s='';for(let i=0;i<9;i++)s+=`<path d="M${-20+i*45} ${500-i*50}H420V${450-i*50}H${-20+i*45}Z" fill="${i%2?'#dfe6ea':'#b7c4cc'}"/>`;return`<svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice"><rect width="400" height="500" fill="#8fa2ae"/>${s}</svg>`})(),
+ forest:(()=>{let t='';for(let i=0;i<14;i++){const x=(i*37+13)%400,w=6+(i%4)*5;t+=`<rect x="${x}" y="0" width="${w}" height="500" fill="#1f2f2a" opacity="${.35+(i%5)*.13}"/>`}return`<svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice"><rect width="400" height="500" fill="#8ea69c"/>${t}</svg>`})()
+};
+const photoMedia = (p, w) => p.src ? `<img src="${esc(sized(p.src,w))}" alt="${esc(p.alt)}" loading="lazy">` : (SCENES[p.scene] || '');
 
-            let embedHTML = '';
+function embedUrl(u){
+  let m;
+  if((m=u.match(/youtube\.com\/shorts\/([\w-]+)/)||u.match(/youtu\.be\/([\w-]+)/)||u.match(/[?&]v=([\w-]+)/)))
+    return 'https://www.youtube.com/embed/'+m[1]+'?autoplay=1&playsinline=1&rel=0';
+  if((m=u.match(/instagram\.com\/(?:reel|reels|p)\/([\w-]+)/)))
+    return 'https://www.instagram.com/reel/'+m[1]+'/embed';
+  if((m=u.match(/tiktok\.com\/.*\/video\/(\d+)/)))
+    return 'https://www.tiktok.com/embed/v2/'+m[1];
+  return null;
+}
+const playIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8z"/></svg>';
 
-            // --- YOUTUBE SHORTS & STANDARD LOGIC ---
-            if (url.includes('youtube.com') || url.includes('youtu.be')) {
-                let id = null;
-                
-                // 1. Handle Shorts Explicitly
-                if (url.includes('shorts/')) {
-                    id = url.split('shorts/')[1].split('?')[0];
-                } 
-                // 2. Handle Standard ?v=
-                else if (url.includes('v=')) {
-                    id = url.split('v=')[1].split('&')[0];
-                }
-                // 3. Handle youtu.be/ID
-                else if (url.includes('youtu.be/')) {
-                    id = url.split('youtu.be/')[1].split('?')[0];
-                }
+/* ---------- load ---------- */
+async function load(){
+  if(!SANITY.projectId) return DEMO;
+  const url = `https://${SANITY.projectId}.apicdn.sanity.io/v${SANITY.apiVersion}/data/query/${SANITY.dataset}?query=${encodeURIComponent(QUERY)}`;
+  try{
+    const r = await fetch(url);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const j = await r.json();
+    return j.result;
+  }catch(e){
+    console.warn('Could not load from Sanity, showing demo content.', e);
+    return DEMO;
+  }
+}
 
-                if (id) {
-                    embedHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1&rel=0" class="w-full h-full" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
-                }
-            }
-            // --- OTHER PLATFORMS ---
-            else if (url.includes('vimeo.com')) {
-                const id = url.split('/').pop();
-                embedHTML = `<iframe src="https://player.vimeo.com/video/${id}?autoplay=1" class="w-full h-full" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
-            }
-            else {
-                 embedHTML = `<div class="bg-white p-8 text-black text-center flex flex-col items-center justify-center h-full"><a href="${url}" target="_blank" class="bg-zinc-800 text-white px-6 py-3 rounded uppercase text-xs tracking-widest">Open Link</a></div>`;
-            }
+/* ---------- render ---------- */
+function render(d){
+  const s = d.settings || {};
+  const brand = s.brand || 'Your name';
+  $('#brandName').textContent = brand;
+  document.title = brand + ' | Photography and short-form campaigns';
+  $('#introText').textContent = s.intro || '';
+  $('#profName').textContent = brand;
+  $('#pfp').innerHTML = s.pfp
+    ? `<img src="${esc(square(s.pfp,360))}" alt="Portrait of ${esc(brand)}">`
+    : esc(brand.trim().charAt(0).toUpperCase());
+  $('#foot').textContent = '© ' + new Date().getFullYear() + ' ' + brand;
+  if(d.demo) $('#foot2').textContent = 'Demo content. Add your Sanity project ID in index.html.';
 
-            container.innerHTML = embedHTML;
-            if(modal) modal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
+  const socials = (s.socials || []).filter(x => x && x.url);
+  $('#links').innerHTML =
+    (s.email ? `<a class="btn" href="mailto:${esc(s.email)}">${esc(s.email)}</a>` : '') +
+    socials.map(x => `<a class="btn ghost" href="${esc(safeUrl(x.url))}" target="_blank" rel="noopener">${esc(x.label)}</a>`).join('');
 
-        function closeModal() {
-            const modal = document.getElementById('video-modal');
-            const container = document.getElementById('video-container');
-            if(modal) modal.classList.add('hidden');
-            if(container) container.innerHTML = '';
-            document.body.style.overflow = 'auto';
-        }
+  /* reach */
+  const rp = (s.reachByPlatform || []).filter(r => r && r.reach > 0);
+  const total = rp.reduce((a,r) => a + r.reach, 0);
+  $('#legend').innerHTML = rp.map(r => `<span>${esc(r.platform)}<b>${fmt(r.reach)}</b></span>`).join('');
+  $('#bar').innerHTML = rp.map(r => `<i style="width:0" data-w="${(r.reach/total*100).toFixed(2)}%" title="${esc(r.platform)}"></i>`).join('');
+  $('#stats').innerHTML = (s.stats || []).map(x => `<div><b data-n="${Number(x.value)||0}">0</b><span>${esc(x.label)}</span></div>`).join('');
+  animate(total);
 
-        // --- VAULT SECURITY ---
-        function checkVault(e) {
-            if (e.key === 'Enter') {
-                const pass = document.getElementById('vault-pass').value;
-                if(pass === 'hive123') { 
-                    document.getElementById('vault-lock').classList.add('hidden');
-                    document.getElementById('vault-grid').classList.remove('hidden');
-                    if(typeof window.fetchVault === 'function') window.fetchVault();
-                } else {
-                    document.getElementById('vault-msg').classList.remove('hidden');
-                }
-            }
-        }
-    </script>
+  /* videos */
+  const vgrid = $('#vgrid'); vgrid.innerHTML = '';
+  const videos = d.videos || [];
+  $('#videos').hidden = !videos.length;
+  videos.forEach(v => {
+    const src = v.url ? embedUrl(v.url) : null;
+    const el = document.createElement('figure');
+    el.className = 'vcard'; el.dataset.p = v.platform;
+    const art = v.poster ? `<img src="${esc(sized(v.poster,600))}" alt="" loading="lazy">` : `<div class="blank">${esc(v.platform)}</div>`;
+    el.innerHTML = `<div class="vbox"><span class="tag">${esc(v.platform)}</span>${art}${src ? `<button class="play" type="button" aria-label="Play ${esc(v.title)}"><span>${playIcon}</span></button>` : ''}</div>
+      <figcaption class="vmeta"><div>${esc(v.title)}<br><span>${src ? esc(v.views || '') : 'Add a valid share link'}</span></div>${v.url ? `<a href="${esc(safeUrl(v.url))}" target="_blank" rel="noopener">Open on ${esc(v.platform)}</a>` : ''}</figcaption>`;
+    if(src){
+      const btn = el.querySelector('.play');
+      btn.onclick = () => {
+        const f = document.createElement('iframe');
+        f.src = src; f.title = v.title;
+        f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+        f.allowFullscreen = true; f.loading = 'lazy';
+        el.querySelector('.vbox').appendChild(f); btn.remove();
+      };
+    }
+    vgrid.appendChild(el);
+  });
+  const plats = ['All', ...new Set(videos.map(v => v.platform))];
+  $('#vfilters').innerHTML = plats.length > 2 ? plats.map((p,i) => `<button class="chip" type="button" data-p="${esc(p)}" aria-pressed="${i===0}">${esc(p)}</button>`).join('') : '';
+  document.querySelectorAll('#vfilters .chip').forEach(c => c.onclick = () => {
+    document.querySelectorAll('#vfilters .chip').forEach(x => x.setAttribute('aria-pressed', x === c));
+    vgrid.querySelectorAll('.vcard').forEach(k => k.hidden = !(c.dataset.p === 'All' || k.dataset.p === c.dataset.p));
+  });
+
+  /* photos + viewer */
+  const photos = d.photos || [];
+  $('#photos').hidden = !photos.length;
+  $('#pgrid').innerHTML = photos.map((p,i) =>
+    `<button class="pitem" type="button" data-i="${i}" style="aspect-ratio:${p.w && p.h ? p.w+'/'+p.h : '4/5'}" aria-label="Open photo: ${esc(p.alt)}">${photoMedia(p,900)}</button>`).join('');
+  const lb = $('#lb'); let cur = 0;
+  const show = i => {
+    cur = (i + photos.length) % photos.length;
+    $('#lbImg').innerHTML = photoMedia(photos[cur], 2000);
+    $('#lbCap').textContent = photos[cur].alt + '  (' + (cur+1) + '/' + photos.length + ')';
+  };
+  document.querySelectorAll('.pitem').forEach(b => b.onclick = () => { show(+b.dataset.i); lb.showModal(); });
+  $('#lbPrev').onclick = () => show(cur-1);
+  $('#lbNext').onclick = () => show(cur+1);
+  $('#lbClose').onclick = () => lb.close();
+  lb.onclick = e => { if(e.target === lb) lb.close(); };
+  lb.onkeydown = e => { if(e.key === 'ArrowRight') show(cur+1); if(e.key === 'ArrowLeft') show(cur-1); };
+}
+
+/* The one page-load moment: numbers count up and the bar fills. */
+function animate(total){
+  const reachEl = $('#reachNum'), nums = [...document.querySelectorAll('[data-n]')];
+  const bars = [...document.querySelectorAll('#bar i')];
+  const finish = () => { reachEl.textContent = fmt(total); nums.forEach(n => n.textContent = n.dataset.n); bars.forEach(i => i.style.width = i.dataset.w); };
+  if(matchMedia('(prefers-reduced-motion:reduce)').matches){ finish(); return; }
+  const t0 = performance.now(), D = 1800;
+  requestAnimationFrame(() => bars.forEach(i => i.style.width = i.dataset.w));
+  (function tick(now){
+    const p = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - p, 4);
+    reachEl.textContent = fmt(total * e);
+    nums.forEach(n => n.textContent = Math.round(n.dataset.n * e));
+    if(p < 1) requestAnimationFrame(tick); else finish();
+  })(t0);
+}
+
+load().then(render);
+</script>
 </body>
 </html>
