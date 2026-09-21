@@ -282,17 +282,31 @@ function render(d){
   $('#stats').innerHTML = (s.stats || []).map(x => `<div><b data-n="${Number(x.value)||0}">0</b><span>${esc(x.label)}</span></div>`).join('');
   animate(total);
 
-  /* videos */
-  const vgrid = $('#vgrid'); vgrid.innerHTML = '';
+  /* videos: shown 12 at a time, with a "Show more" button */
+  const vgrid = $('#vgrid');
   const videos = d.videos || [];
   $('#videos').hidden = !videos.length;
-  videos.forEach(v => {
+  const PAGE = 12;
+  let shown = PAGE, platform = 'All';
+  const more = document.createElement('div');
+  more.style.cssText = 'display:flex;justify-content:center;margin-top:32px';
+  more.innerHTML = '<button class="btn ghost" type="button" id="vmore"></button>';
+  vgrid.after(more);
+  function card(v){
     const src = v.url ? embedUrl(v.url) : null;
     const el = document.createElement('figure');
-    el.className = 'vcard'; el.dataset.p = v.platform;
-    const art = v.poster ? `<img src="${esc(sized(v.poster,600))}" alt="" loading="lazy">` : `<div class="blank">${esc(v.platform)}</div>`;
+    el.className = 'vcard';
+    /* Thumbnail: use the image stored in Sanity if there is one. Otherwise, for
+       Instagram, try Instagram's own thumbnail address (unofficial, so it may fail);
+       if it fails the plain tile underneath stays visible. */
+    const ig = v.url && v.url.match(/instagram\.com\/(?:reel|reels|p)\/([\w-]+)/);
+    const art = v.poster
+      ? `<div class="blank">${esc(v.platform)}</div><img src="${esc(sized(v.poster,600))}" alt="" loading="lazy">`
+      : `<div class="blank">${esc(v.platform)}</div>` + (ig ? `<img data-ig src="https://www.instagram.com/p/${ig[1]}/media/?size=l" referrerpolicy="no-referrer" alt="" loading="lazy">` : '');
     el.innerHTML = `<div class="vbox"><span class="tag">${esc(v.platform)}</span>${art}${src ? `<button class="play" type="button" aria-label="Play ${esc(v.title)}"><span>${playIcon}</span></button>` : ''}</div>
-      <figcaption class="vmeta"><div>${esc(v.title)}<br><span>${src ? esc(v.views || '') : 'Add a valid share link'}</span></div>${v.url ? `<a href="${esc(safeUrl(v.url))}" target="_blank" rel="noopener">Open on ${esc(v.platform)}</a>` : ''}</figcaption>`;
+      <figcaption class="vmeta"><div><span dir="auto" style="color:var(--ink);display:block">${esc(v.title)}</span><span>${src ? esc(v.views || '') : 'Add a valid share link'}</span></div>${v.url ? `<a href="${esc(safeUrl(v.url))}" target="_blank" rel="noopener">Open on ${esc(v.platform)}</a>` : ''}</figcaption>`;
+    const igImg = el.querySelector('img[data-ig]');
+    if(igImg) igImg.addEventListener('error', () => igImg.remove());
     if(src){
       const btn = el.querySelector('.play');
       btn.onclick = () => {
@@ -303,14 +317,24 @@ function render(d){
         el.querySelector('.vbox').appendChild(f); btn.remove();
       };
     }
-    vgrid.appendChild(el);
-  });
+    return el;
+  }
+  function paintVideos(){
+    const list = videos.filter(v => platform === 'All' || v.platform === platform);
+    vgrid.innerHTML = '';
+    list.slice(0, shown).forEach(v => vgrid.appendChild(card(v)));
+    const left = list.length - shown;
+    more.style.display = left > 0 ? 'flex' : 'none';
+    $('#vmore').textContent = `Show more (${Math.max(left,0)} left)`;
+  }
+  $('#vmore').onclick = () => { shown += PAGE; paintVideos(); };
   const plats = ['All', ...new Set(videos.map(v => v.platform))];
   $('#vfilters').innerHTML = plats.length > 2 ? plats.map((p,i) => `<button class="chip" type="button" data-p="${esc(p)}" aria-pressed="${i===0}">${esc(p)}</button>`).join('') : '';
   document.querySelectorAll('#vfilters .chip').forEach(c => c.onclick = () => {
     document.querySelectorAll('#vfilters .chip').forEach(x => x.setAttribute('aria-pressed', x === c));
-    vgrid.querySelectorAll('.vcard').forEach(k => k.hidden = !(c.dataset.p === 'All' || k.dataset.p === c.dataset.p));
+    platform = c.dataset.p; shown = PAGE; paintVideos();
   });
+  paintVideos();
 
   /* photos + viewer */
   const photos = d.photos || [];
