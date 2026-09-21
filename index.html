@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="description" content="Photography and short-form video campaigns.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%93%B7%3C/text%3E%3C/svg%3E">
 <title>Photography and short-form campaigns</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,500;12..96,800&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap" rel="stylesheet">
@@ -40,7 +41,7 @@ header.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;backgroun
 
 .hero{padding:clamp(48px,8vw,104px) 0 clamp(40px,6vw,72px);border-bottom:1px solid var(--line)}
 .hero .label{font-family:var(--display);font-size:clamp(16px,1.6vw,20px);color:var(--muted);margin:0 0 8px}
-.reach{font-family:var(--display);font-weight:800;font-size:clamp(96px,26vw,400px);line-height:.82;letter-spacing:-.06em;margin:0;font-variant-numeric:tabular-nums}
+.reach{font-family:var(--display);font-weight:800;font-size:clamp(88px,24vw,320px);max-width:100%;line-height:.82;letter-spacing:-.06em;margin:0;font-variant-numeric:tabular-nums}
 .split{margin-top:clamp(28px,4vw,48px)}
 .bar{display:flex;height:10px;gap:3px}
 .bar i{display:block;background:#4a5056;transition:width 1.4s cubic-bezier(.2,.7,.2,1)}
@@ -183,7 +184,7 @@ const SANITY = { projectId: 'gi6q4yr8', dataset: 'portfolio', apiVersion: '2025-
 /* One request fetches everything the page needs. */
 const QUERY = `{
   "settings": *[_type=="siteSettings"][0]{brand,intro,email,socials,reachByPlatform,stats,"pfp":profileImage.asset->url},
-  "videos": *[_type=="video"]|order(order asc,_createdAt desc){title,platform,url,views,"poster":poster.asset->url},
+  "videos": *[_type=="video"]|order(order asc,_createdAt desc){title,platform,url,views,"poster":coalesce(poster.asset->url,poster.asset.asset->url)},
   "photos": *[_type=="photo"]|order(order asc,_createdAt desc){alt,"src":image.asset->url,"w":image.asset->metadata.dimensions.width,"h":image.asset->metadata.dimensions.height}
 }`;
 
@@ -314,7 +315,15 @@ function render(d){
         f.src = src; f.title = v.title;
         f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
         f.allowFullscreen = true; f.loading = 'lazy';
-        el.querySelector('.vbox').appendChild(f); btn.remove();
+        const box = el.querySelector('.vbox');
+        /* Instagram and TikTok players need about 340px of width. In narrower cards,
+           draw the player at that width and scale it down so nothing is cropped. */
+        const NEED = 340, w = box.clientWidth;
+        if(v.platform !== 'YouTube' && w && w < NEED){
+          const k = w / NEED;
+          f.style.cssText = `inset:auto;top:0;left:0;width:${NEED}px;height:${box.clientHeight / k}px;transform:scale(${k});transform-origin:0 0`;
+        }
+        box.appendChild(f); btn.remove();
       };
     }
     return el;
